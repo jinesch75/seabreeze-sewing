@@ -70,7 +70,6 @@ function renderCard(design) {
     <div class="design-card" data-id="${design.id}">
       ${galleryHtml}
       <div class="design-card-body">
-        <div class="design-card-category">${escHtml(design.category || 'Design')}</div>
         <h3>${escHtml(design.title)}</h3>
         ${design.price ? `<div class="design-card-price">${escHtml(design.price)}</div>` : ''}
         <p>${escHtml(design.description || '')}</p>

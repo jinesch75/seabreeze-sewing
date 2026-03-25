@@ -4,9 +4,8 @@
 // ============================================================
 //
 //  ADMIN PASSWORD: Change this to something secure!
-//  Default: seabreeze2024
 //
-const ADMIN_PASSWORD = 'seabreeze2024';
+const ADMIN_PASSWORD = 'martine';
 
 const express = require('express');
 const session = require('express-session');

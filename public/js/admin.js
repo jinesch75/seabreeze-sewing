@@ -57,7 +57,6 @@ function showAdminShell() {
   document.getElementById('adminShell').style.display   = 'block';
   loadDesigns();
   loadContacts();
-  loadCategories();
 }
 
 // ── Tabs ──────────────────────────────────────────────────
@@ -73,7 +72,6 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + tab)?.classList.add('active');
   if (tab === 'about') { loadAboutSettings(); loadWorkshopSettings(); loadHeroPhotoPicker(); }
-  if (tab === 'designs') { loadCategories(); }
 }
 
 // ── Price helpers ─────────────────────────────────────────
@@ -250,9 +248,7 @@ async function loadDesigns() {
         <div class="admin-design-info">
           <div class="admin-design-title">${escHtml(d.title)}</div>
           <div class="admin-design-meta">
-            <span class="tag">${escHtml(d.category)}</span>
             ${d.isNew ? '<span class="tag" style="background:rgba(201,149,106,0.18);color:#8a3a00;font-weight:700;">🆕 NEW</span>' : ''}
-            ${d.featured ? '<span class="tag featured">★ Featured</span>' : ''}
             ${d.price
               ? `<span class="tag" style="background:rgba(201,149,106,0.15);color:#8a5a2a;">💰 ${escHtml(d.price)}</span>`
               : '<span class="tag" style="opacity:0.5;">No price</span>'}
@@ -272,7 +268,7 @@ async function loadDesigns() {
             <button class="btn-save-price" onclick="savePrice('${d.id}')">Save</button>
             <button class="btn-cancel-price" onclick="closePriceEdit('${d.id}')">Cancel</button>
           </div>
-          <!-- Inline design editor (title, description, category) -->
+          <!-- Inline design editor (title, description) -->
           <div class="design-edit-row" id="edit-row-${d.id}">
             <div class="edit-fields">
               <div>
@@ -280,12 +276,6 @@ async function loadDesigns() {
                 <input type="text" id="edit-title-${d.id}" value="${escHtml(d.title)}" placeholder="Design title">
               </div>
               <div>
-                <label>Category</label>
-                <select id="edit-cat-${d.id}">
-                  ${buildCategoryOptions(d.category)}
-                </select>
-              </div>
-              <div class="full">
                 <label>Description</label>
                 <textarea id="edit-desc-${d.id}" rows="3" placeholder="Describe the design…">${escHtml(d.description || '')}</textarea>
               </div>
@@ -321,11 +311,6 @@ async function loadDesigns() {
             style="${d.isNew ? 'background:rgba(201,149,106,0.2);color:#8a3a00;' : ''}">
             ${d.isNew ? '🆕' : '🔖'}
           </button>
-          <button class="btn-icon btn-icon-toggle"
-            title="${d.featured ? 'Unfeature' : 'Feature on homepage'}"
-            onclick="toggleFeatured('${d.id}', ${!d.featured})">
-            ${d.featured ? '★' : '☆'}
-          </button>
           <button class="btn-icon btn-icon-delete"
             title="Delete design"
             onclick="deleteDesign('${d.id}', '${escAttr(d.title)}')">
@@ -336,20 +321,6 @@ async function loadDesigns() {
     }).join('');
   } catch {
     list.innerHTML = '<p style="color:var(--text-mid);padding:20px">Failed to load designs.</p>';
-  }
-}
-
-async function toggleFeatured(id, featured) {
-  try {
-    await fetch(`/admin/designs/${id}`, {
-      method:  'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ featured })
-    });
-    showToast(featured ? 'Design featured on homepage!' : 'Design removed from homepage.', 'success');
-    loadDesigns();
-  } catch {
-    showToast('Could not update design.', 'error');
   }
 }
 
@@ -661,20 +632,7 @@ async function savePrice(id) {
   }
 }
 
-// ── Inline Design Edit (title, description, category) ────
-let adminCategoriesCache = [];
-
-function buildCategoryOptions(selected) {
-  const cats = adminCategoriesCache.length
-    ? adminCategoriesCache
-    : ['Dresses','Tops','Sets','Skirts','Accessories','Other'];
-  // Include current category even if not in managed list
-  const all = selected && !cats.includes(selected) ? [selected, ...cats] : cats;
-  return all.map(c =>
-    `<option value="${escHtml(c)}" ${c === selected ? 'selected' : ''}>${escHtml(c)}</option>`
-  ).join('');
-}
-
+// ── Inline Design Edit (title, description) ──────────────
 function openEditDesign(id) {
   // Close any other open edit rows
   document.querySelectorAll('.design-edit-row.open').forEach(r => r.classList.remove('open'));
@@ -691,17 +649,15 @@ function closeEditDesign(id) {
 async function saveEditDesign(id) {
   const titleEl = document.getElementById('edit-title-' + id);
   const descEl  = document.getElementById('edit-desc-' + id);
-  const catEl   = document.getElementById('edit-cat-' + id);
   if (!titleEl) return;
   const title       = titleEl.value.trim();
   const description = descEl ? descEl.value.trim() : '';
-  const category    = catEl  ? catEl.value : '';
   if (!title) { showToast('Title cannot be empty.', 'error'); return; }
   try {
     const res = await fetch(`/admin/designs/${id}`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ title, description, category })
+      body:    JSON.stringify({ title, description })
     });
     const json = await res.json();
     if (json.success) {
@@ -713,87 +669,6 @@ async function saveEditDesign(id) {
     }
   } catch {
     showToast('Could not update design.', 'error');
-  }
-}
-
-// ── Categories Manager ────────────────────────────────────
-async function loadCategories() {
-  try {
-    const res  = await fetch('/admin/settings');
-    const s    = await res.json();
-    let cats   = s.categories || [];
-    // Auto-init from designs if empty
-    if (cats.length === 0) {
-      const dr = await fetch('/admin/designs');
-      const ds = await dr.json();
-      cats = [...new Set(ds.map(d => d.category).filter(Boolean))];
-      if (cats.length > 0) {
-        // Save them to settings
-        for (const c of cats) {
-          await fetch('/admin/settings/categories', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: c })
-          });
-        }
-      }
-    }
-    adminCategoriesCache = cats;
-    renderCategoryTags(cats);
-  } catch {}
-}
-
-function renderCategoryTags(cats) {
-  const el = document.getElementById('categoriesTags');
-  if (!el) return;
-  if (cats.length === 0) {
-    el.innerHTML = '<span style="color:var(--text-light);font-size:0.85rem;">No categories yet — add one below.</span>';
-    return;
-  }
-  el.innerHTML = cats.map(c => `
-    <div class="cat-tag">
-      ${escHtml(c)}
-      <button class="cat-tag-del" title="Delete category" onclick="deleteCategory('${escAttr(c)}')">×</button>
-    </div>`).join('');
-}
-
-async function addCategory() {
-  const input = document.getElementById('newCategoryInput');
-  if (!input) return;
-  const name = input.value.trim();
-  if (!name) { showToast('Please enter a category name.', 'error'); return; }
-  try {
-    const res  = await fetch('/admin/settings/categories', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ name })
-    });
-    const json = await res.json();
-    if (json.success) {
-      showToast(`Category "${name}" added!`, 'success');
-      input.value = '';
-      adminCategoriesCache = json.categories;
-      renderCategoryTags(json.categories);
-    } else {
-      showToast(json.error || 'Could not add category.', 'error');
-    }
-  } catch {
-    showToast('Could not add category.', 'error');
-  }
-}
-
-async function deleteCategory(name) {
-  if (!confirm(`Remove the category "${name}"?\n\nDesigns in this category will remain, but the filter button will be gone.`)) return;
-  try {
-    const res  = await fetch('/admin/settings/categories/' + encodeURIComponent(name), { method: 'DELETE' });
-    const json = await res.json();
-    if (json.success) {
-      showToast(`Category "${name}" removed.`, 'success');
-      adminCategoriesCache = json.categories;
-      renderCategoryTags(json.categories);
-    }
-  } catch {
-    showToast('Could not delete category.', 'error');
   }
 }
 

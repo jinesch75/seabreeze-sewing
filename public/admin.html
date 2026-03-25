@@ -553,7 +553,7 @@
     .design-edit-row.open { display: flex; }
     .design-edit-row .edit-fields {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;
       gap: 12px;
     }
     .design-edit-row .edit-fields .full { grid-column: 1 / -1; }
@@ -843,20 +843,9 @@
 
             <!-- Fields -->
             <div class="upload-fields">
-              <div class="form-group">
+              <div class="form-group" style="grid-column:1/-1;">
                 <label>Design Title *</label>
                 <input type="text" name="title" id="uploadTitle" placeholder="e.g. Turquoise Linen Dress" required>
-              </div>
-              <div class="form-group">
-                <label>Category</label>
-                <select name="category" id="uploadCategory">
-                  <option value="Dresses">Dresses</option>
-                  <option value="Tops">Tops</option>
-                  <option value="Sets">Sets</option>
-                  <option value="Skirts">Skirts</option>
-                  <option value="Accessories">Accessories</option>
-                  <option value="Other">Other</option>
-                </select>
               </div>
               <div class="form-group" style="grid-column:1/-1;">
                 <label>Price in USD <span style="font-weight:400;color:var(--text-mid);font-size:0.82rem;">(default 45 — enter amount only)</span></label>
@@ -881,41 +870,12 @@
                   </div>
                 </label>
               </div>
-              <div class="form-group" style="grid-column:1/-1;">
-                <label class="featured-toggle" for="uploadFeatured">
-                  <input type="checkbox" id="uploadFeatured" name="featured">
-                  <div class="toggle-switch"></div>
-                  <div>
-                    <div class="toggle-label">Feature on Homepage</div>
-                    <div class="toggle-hint">Highlight this design (used for internal sorting)</div>
-                  </div>
-                </label>
-              </div>
             </div>
 
             <button type="submit" class="btn btn-primary" id="uploadBtn" style="margin-top:8px;">
               Upload Design
             </button>
           </form>
-        </div>
-
-        <!-- Categories Manager -->
-        <div class="upload-card" id="categoriesCard" style="margin-bottom:36px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-            <h3 style="margin:0;">Filter Categories</h3>
-            <span style="font-size:0.82rem;color:var(--text-mid);">Shown as shortcuts on the Designs page</span>
-          </div>
-          <p style="color:var(--text-mid);font-size:0.88rem;margin-bottom:20px;">
-            Each design is assigned to one category. These categories appear as filter buttons visitors can click to browse.
-          </p>
-          <div id="categoriesTags">
-            <span style="color:var(--text-light);font-size:0.85rem;">Loading…</span>
-          </div>
-          <div class="cat-add-row">
-            <input type="text" id="newCategoryInput" placeholder="New category name (e.g. Tote Bags)"
-              onkeydown="if(event.key==='Enter'){event.preventDefault();addCategory();}">
-            <button onclick="addCategory()">+ Add</button>
-          </div>
         </div>
 
         <!-- Designs List -->

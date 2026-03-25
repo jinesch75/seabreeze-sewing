@@ -17,7 +17,6 @@
       </a>
       <ul class="nav-links" id="navLinks">
         <li><a href="/">Home</a></li>
-        <li><a href="/designs.html">Designs</a></li>
         <li><a href="/about.html">About</a></li>
         <li><a href="/contact.html" class="active">Contact</a></li>
       </ul>
@@ -108,9 +107,9 @@
               <label>Phone Number (optional)</label>
               <input type="tel" name="phone" id="phone" placeholder="+1 441 000 0000">
             </div>
-            <!-- Design Carousel Selector -->
+            <!-- Design Carousel Selector (multi-select) -->
             <div class="form-group">
-              <label>Which Design Are You Interested In?</label>
+              <label>Which Design Are You Interested In? <span style="font-weight:400;color:var(--text-mid);font-size:0.82rem;">(select one or more)</span></label>
               <input type="hidden" name="item" id="item" value="">
               <div class="design-carousel-wrap">
                 <button type="button" class="carousel-arrow carousel-prev" id="carouselPrev" onclick="carouselScroll(-1)" aria-label="Previous">&#8249;</button>
@@ -137,7 +136,7 @@
             <div class="form-success-icon">🌊</div>
             <h3>Message Received!</h3>
             <p>Thank you for reaching out. I'll be in touch within 1–2 business days to arrange everything.</p>
-            <a href="/designs.html" class="btn btn-outline" style="margin-top: 20px;">Continue Browsing</a>
+            <a href="/" class="btn btn-outline" style="margin-top: 20px;">Back to Home</a>
           </div>
         </div>
       </div>
@@ -156,7 +155,6 @@
           <h4>Navigation</h4>
           <ul>
             <li><a href="/">Home</a></li>
-            <li><a href="/designs.html">Designs</a></li>
             <li><a href="/about.html">About</a></li>
             <li><a href="/contact.html">Contact</a></li>
           </ul>
@@ -273,8 +271,9 @@
 
   <script src="/js/main.js"></script>
   <script>
-    // ── Design Carousel ────────────────────────────────────
+    // ── Design Carousel (multi-select) ─────────────────────
     let carouselDesigns = [];
+    let selectedDesigns = new Set(); // tracks selected design titles
 
     async function loadCarousel() {
       const carousel = document.getElementById('designCarousel');
@@ -282,23 +281,17 @@
         const res = await fetch('/api/designs');
         carouselDesigns = await res.json();
 
-        let html = `
-          <div class="carousel-card general-inquiry selected" data-value="" onclick="selectCarouselCard(this, '')">
-            <span style="font-size:1.4rem">✉️</span>
-            <div class="carousel-card-label" style="white-space:normal;padding:4px 8px;font-size:0.7rem;">General Inquiry</div>
-          </div>
-`;
-
+        let html = '';
         carouselDesigns.forEach(d => {
           const img = d.image || (d.images && d.images[0]) || '';
           html += `
-            <div class="carousel-card" data-value="${escHtml(d.title)}" onclick="selectCarouselCard(this, '${escAttr(d.title)}')">
+            <div class="carousel-card" data-value="${escHtml(d.title)}" onclick="toggleCarouselCard(this, '${escAttr(d.title)}')">
               ${img ? `<img src="${escHtml(img)}" alt="${escHtml(d.title)}" loading="lazy" onerror="this.style.display='none'">` : '<div style="height:80px;background:var(--sand-dark);"></div>'}
               <div class="carousel-card-label" title="${escHtml(d.title)}">${escHtml(d.title)}</div>
             </div>`;
         });
 
-        carousel.innerHTML = html;
+        carousel.innerHTML = html || '<div class="carousel-loading">No designs yet.</div>';
 
         // Pre-fill from URL param
         const params = new URLSearchParams(window.location.search);
@@ -306,7 +299,7 @@
         if (itemParam) {
           const match = carousel.querySelector(`[data-value="${CSS.escape(itemParam)}"]`);
           if (match) {
-            selectCarouselCard(match, itemParam);
+            toggleCarouselCard(match, itemParam);
             match.scrollIntoView({ inline: 'center', behavior: 'smooth' });
           }
         }
@@ -315,12 +308,30 @@
       }
     }
 
-    function selectCarouselCard(el, value) {
-      document.querySelectorAll('.carousel-card').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
-      document.getElementById('item').value = value;
+    function toggleCarouselCard(el, value) {
+      if (selectedDesigns.has(value)) {
+        selectedDesigns.delete(value);
+        el.classList.remove('selected');
+      } else {
+        selectedDesigns.add(value);
+        el.classList.add('selected');
+      }
+      updateSelectionLabel();
+    }
+
+    function updateSelectionLabel() {
       const label = document.getElementById('selectedDesignLabel');
-      label.textContent = value ? '✓ Selected: ' + value : '✓ General Inquiry selected';
+      const names = Array.from(selectedDesigns);
+      if (names.length === 0) {
+        label.textContent = '';
+        document.getElementById('item').value = '';
+      } else if (names.length === 1) {
+        label.textContent = '✓ Selected: ' + names[0];
+        document.getElementById('item').value = names[0];
+      } else {
+        label.textContent = '✓ ' + names.length + ' designs selected: ' + names.join(', ');
+        document.getElementById('item').value = names.join(', ');
+      }
     }
 
     function carouselScroll(dir) {
@@ -336,11 +347,12 @@
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
       btn.textContent = 'Sending...';
+      const selectedItem = document.getElementById('item').value || 'General Inquiry';
       const data = {
         name:    document.getElementById('name').value,
         email:   document.getElementById('email').value,
         phone:   document.getElementById('phone').value,
-        item:    document.getElementById('item').value || 'General Inquiry',
+        item:    selectedItem,
         message: document.getElementById('message').value
       };
       try {
