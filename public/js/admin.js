@@ -95,8 +95,12 @@ function previewImages(input) {
   const strip = document.getElementById('imagePreviewStrip');
   const thumbs = document.getElementById('previewThumbs');
   thumbs.innerHTML = '';
+  // Hide the drop hint and show the preview strip (both live inside the drop zone)
   document.getElementById('dropContent').style.display = 'none';
   strip.style.display = 'block';
+  // Show the "Remove all" button that lives safely outside the drop zone
+  const clearWrap = document.getElementById('clearImagesWrap');
+  if (clearWrap) clearWrap.style.display = 'block';
   Array.from(input.files).forEach((file, i) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -125,6 +129,8 @@ function clearImages() {
   document.getElementById('dropContent').style.display = '';
   document.getElementById('imagePreviewStrip').style.display = 'none';
   document.getElementById('previewThumbs').innerHTML = '';
+  const clearWrap = document.getElementById('clearImagesWrap');
+  if (clearWrap) clearWrap.style.display = 'none';
 }
 
 // Drag & drop (multiple files)
@@ -219,6 +225,17 @@ async function loadDesigns() {
   try {
     const res     = await fetch('/admin/designs');
     const designs = await res.json();
+
+    // Guard: if the server returned an error object (e.g. session expired) instead of an array,
+    // show a helpful message rather than crashing with "map is not a function".
+    if (!Array.isArray(designs)) {
+      list.innerHTML = `<div class="empty-state">
+        <div class="empty-state-icon">⚠️</div>
+        <h3>Could not load designs</h3>
+        <p>Your session may have expired. Please <a href="/admin.html" style="color:var(--turquoise)">sign in again</a>.</p>
+      </div>`;
+      return;
+    }
 
     const count = document.getElementById('designsCount');
     if (designs.length > 0) {
@@ -677,8 +694,15 @@ async function saveEditDesign(id) {
 
 // ── Photo Move Modal ──────────────────────────────────────
 let allDesignsCache = [];
+let currentPhotoModalDesignId = null;
 
 async function openPhotoMoveModal(designId) {
+  currentPhotoModalDesignId = designId;
+  // Reset add-photo section
+  const inp = document.getElementById('addPhotoInput');
+  if (inp) inp.value = '';
+  const lbl = document.getElementById('addPhotoLabel');
+  if (lbl) lbl.textContent = 'No files selected';
   // Refresh designs list
   try {
     const res = await fetch('/admin/designs');
@@ -739,7 +763,50 @@ async function openPhotoMoveModal(designId) {
 function closePhotoMoveModal() {
   document.getElementById('photoMoveOverlay').classList.remove('open');
   document.body.style.overflow = '';
+  currentPhotoModalDesignId = null;
   loadDesigns();
+}
+
+function updateAddPhotoLabel(input) {
+  const lbl = document.getElementById('addPhotoLabel');
+  if (!lbl) return;
+  if (input.files && input.files.length > 0) {
+    lbl.textContent = input.files.length === 1
+      ? input.files[0].name
+      : `${input.files.length} photos selected`;
+  } else {
+    lbl.textContent = 'No files selected';
+  }
+}
+
+async function addPhotosToDesign() {
+  const designId = currentPhotoModalDesignId;
+  if (!designId) return;
+  const input = document.getElementById('addPhotoInput');
+  if (!input || !input.files || input.files.length === 0) {
+    showToast('Please choose at least one photo first.', 'error');
+    return;
+  }
+  const btn = document.getElementById('addPhotoBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Uploading…'; }
+  try {
+    const fd = new FormData();
+    for (const file of input.files) fd.append('images', file);
+    const res  = await fetch(`/admin/designs/${designId}`, { method: 'PATCH', body: fd });
+    const json = await res.json();
+    if (json.success) {
+      showToast(`${input.files.length === 1 ? 'Photo' : input.files.length + ' photos'} added!`, 'success');
+      // Re-open modal with refreshed photos
+      closePhotoMoveModal();
+      setTimeout(() => openPhotoMoveModal(designId), 400);
+    } else {
+      showToast(json.error || 'Upload failed.', 'error');
+    }
+  } catch {
+    showToast('Could not upload photos.', 'error');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = 'Upload'; }
+  }
 }
 
 async function movePhoto(sourceId, imageIndex) {
@@ -856,6 +923,10 @@ async function loadHeroPhotoPicker() {
   try {
     const dr = await fetch('/admin/designs');
     const ds = await dr.json();
+    if (!Array.isArray(ds)) {
+      picker.innerHTML = '<div style="grid-column:1/-1;color:#dc2626;text-align:center;padding:20px;">Could not load photos — please sign out and back in.</div>';
+      return;
+    }
     const allPhotos = [];
     ds.forEach(d => {
       const imgs = d.images && d.images.length > 0 ? d.images : (d.image ? [d.image] : []);

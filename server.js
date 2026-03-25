@@ -17,11 +17,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ── Paths ──────────────────────────────────────────────────
-const DATA_DIR    = path.join(__dirname, 'data');
+const DATA_DIR      = path.join(__dirname, 'data');
 const DESIGNS_FILE  = path.join(DATA_DIR, 'designs.json');
 const CONTACTS_FILE = path.join(DATA_DIR, 'contacts.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
-const UPLOADS_DIR = path.join(__dirname, 'public', 'images', 'uploads');
+const UPLOADS_DIR   = path.join(__dirname, 'public', 'images', 'uploads');
 
 // Ensure directories exist
 [DATA_DIR, UPLOADS_DIR].forEach(dir => {
@@ -37,17 +37,66 @@ function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
 }
 
-// ── Multer (image uploads) ─────────────────────────────────
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, UPLOADS_DIR),
-  filename:    (req, file, cb) => {
-    const unique = Date.now() + '-' + Math.round(Math.random() * 1e6);
-    cb(null, unique + path.extname(file.originalname));
-  }
-});
+// ── Image storage: Cloudinary (production) or local disk (development) ──
+//
+//  On Railway: set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
+//  Locally:    leave those env vars unset — photos save to public/images/uploads/ as before
+//
+const CLOUDINARY_ENABLED = !!(
+  process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY    &&
+  process.env.CLOUDINARY_API_SECRET
+);
+
+let uploadImage, deleteImage;
+
+if (CLOUDINARY_ENABLED) {
+  const cloudinary = require('cloudinary').v2;
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key:    process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
+  });
+
+  // Upload a file buffer to Cloudinary; returns a permanent https:// URL
+  uploadImage = (buffer) => new Promise((resolve, reject) => {
+    cloudinary.uploader.upload_stream(
+      { folder: 'seabreeze-sewing', resource_type: 'image' },
+      (err, result) => err ? reject(err) : resolve(result.secure_url)
+    ).end(buffer);
+  });
+
+  // Delete a Cloudinary image by its URL (safe to call on catalog/ URLs — ignored)
+  deleteImage = (url) => {
+    if (!url || !url.includes('cloudinary.com')) return Promise.resolve();
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+)\.[^.]+$/);
+    if (!match) return Promise.resolve();
+    return cloudinary.uploader.destroy(match[1]).catch(() => {/* ignore delete errors */});
+  };
+
+} else {
+  // Local disk fallback (development / running on your own computer)
+  uploadImage = (buffer, originalname) => {
+    const unique   = Date.now() + '-' + Math.round(Math.random() * 1e6);
+    const ext      = originalname ? path.extname(originalname) : '.jpg';
+    const filename = unique + ext;
+    fs.writeFileSync(path.join(UPLOADS_DIR, filename), buffer);
+    return Promise.resolve('/images/uploads/' + filename);
+  };
+
+  deleteImage = (url) => {
+    if (url && url.startsWith('/images/uploads/')) {
+      const fp = path.join(__dirname, 'public', url);
+      if (fs.existsSync(fp)) try { fs.unlinkSync(fp); } catch {}
+    }
+    return Promise.resolve();
+  };
+}
+
+// ── Multer — always use memory storage; uploadImage() handles saving ──
 const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB per file
+  storage: multer.memoryStorage(),
+  limits:  { fileSize: 10 * 1024 * 1024 }, // 10 MB per file
   fileFilter: (req, file, cb) => {
     const allowed = /jpeg|jpg|png|gif|webp/;
     const ok = allowed.test(path.extname(file.originalname).toLowerCase())
@@ -165,53 +214,55 @@ app.get('/admin/settings', requireAdmin, (req, res) => {
 });
 
 // POST upload about/profile photo
-app.post('/admin/settings/about-photo', requireAdmin, upload.single('photo'), (req, res) => {
+app.post('/admin/settings/about-photo', requireAdmin, upload.single('photo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No photo uploaded.' });
-  const url = '/images/uploads/' + req.file.filename;
-  let s = readJSON(SETTINGS_FILE);
-  if (!s || Array.isArray(s)) s = {};
-  s.aboutPhoto = url;
-  writeJSON(SETTINGS_FILE, s);
-  res.json({ success: true, url });
+  try {
+    const url = await uploadImage(req.file.buffer, req.file.originalname);
+    let s = readJSON(SETTINGS_FILE);
+    if (!s || Array.isArray(s)) s = {};
+    // Delete old photo if it exists
+    if (s.aboutPhoto) await deleteImage(s.aboutPhoto);
+    s.aboutPhoto = url;
+    writeJSON(SETTINGS_FILE, s);
+    res.json({ success: true, url });
+  } catch (err) {
+    console.error('about-photo upload error:', err);
+    res.status(500).json({ error: 'Image upload failed. Please try again.' });
+  }
 });
 
 // DELETE about photo
-app.delete('/admin/settings/about-photo', requireAdmin, (req, res) => {
+app.delete('/admin/settings/about-photo', requireAdmin, async (req, res) => {
   let s = readJSON(SETTINGS_FILE);
   if (!s || Array.isArray(s)) s = {};
-  if (s.aboutPhoto && s.aboutPhoto.startsWith('/images/uploads/')) {
-    const fp = path.join(__dirname, 'public', s.aboutPhoto);
-    if (fs.existsSync(fp)) fs.unlinkSync(fp);
-  }
+  if (s.aboutPhoto) await deleteImage(s.aboutPhoto);
   s.aboutPhoto = null;
   writeJSON(SETTINGS_FILE, s);
   res.json({ success: true });
 });
 
 // POST upload workshop / homepage photo
-app.post('/admin/settings/workshop-photo', requireAdmin, upload.single('photo'), (req, res) => {
+app.post('/admin/settings/workshop-photo', requireAdmin, upload.single('photo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No photo uploaded.' });
-  const url = '/images/uploads/' + req.file.filename;
-  let s = readJSON(SETTINGS_FILE);
-  if (!s || Array.isArray(s)) s = {};
-  // Remove old file if it was an upload
-  if (s.workshopPhoto && s.workshopPhoto.startsWith('/images/uploads/')) {
-    const old = path.join(__dirname, 'public', s.workshopPhoto);
-    if (fs.existsSync(old)) fs.unlinkSync(old);
+  try {
+    const url = await uploadImage(req.file.buffer, req.file.originalname);
+    let s = readJSON(SETTINGS_FILE);
+    if (!s || Array.isArray(s)) s = {};
+    if (s.workshopPhoto) await deleteImage(s.workshopPhoto);
+    s.workshopPhoto = url;
+    writeJSON(SETTINGS_FILE, s);
+    res.json({ success: true, url });
+  } catch (err) {
+    console.error('workshop-photo upload error:', err);
+    res.status(500).json({ error: 'Image upload failed. Please try again.' });
   }
-  s.workshopPhoto = url;
-  writeJSON(SETTINGS_FILE, s);
-  res.json({ success: true, url });
 });
 
 // DELETE workshop photo
-app.delete('/admin/settings/workshop-photo', requireAdmin, (req, res) => {
+app.delete('/admin/settings/workshop-photo', requireAdmin, async (req, res) => {
   let s = readJSON(SETTINGS_FILE);
   if (!s || Array.isArray(s)) s = {};
-  if (s.workshopPhoto && s.workshopPhoto.startsWith('/images/uploads/')) {
-    const fp = path.join(__dirname, 'public', s.workshopPhoto);
-    if (fs.existsSync(fp)) fs.unlinkSync(fp);
-  }
+  if (s.workshopPhoto) await deleteImage(s.workshopPhoto);
   s.workshopPhoto = null;
   writeJSON(SETTINGS_FILE, s);
   res.json({ success: true });
@@ -262,7 +313,7 @@ app.delete('/admin/settings/categories/:name', requireAdmin, (req, res) => {
   res.json({ success: true, categories: s.categories });
 });
 
-// PUT/replace hero photos array (admin) — up to 4 photo URLs
+// PUT/replace hero photos array (admin) — up to 5 photo URLs
 app.put('/admin/settings/hero-photos', requireAdmin, (req, res) => {
   const { photos } = req.body;
   if (!Array.isArray(photos)) return res.status(400).json({ error: 'photos must be an array.' });
@@ -301,7 +352,6 @@ app.patch('/admin/designs/:sourceId/move-image', requireAdmin, (req, res) => {
   designs[tgtIdx].image  = tgtImages[0];
 
   if (willDeleteSource) {
-    // Source has no images left — delete the design entirely
     designs.splice(srcIdx, 1);
   } else {
     designs[srcIdx].images = srcImages;
@@ -320,32 +370,39 @@ app.get('/admin/designs', requireAdmin, (req, res) => {
 });
 
 // POST new design (with one or more images)
-app.post('/admin/designs', requireAdmin, upload.array('images', 10), (req, res) => {
+app.post('/admin/designs', requireAdmin, upload.array('images', 10), async (req, res) => {
   const { title, description, category, featured, price, isNew } = req.body;
   if (!title || !req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'Title and at least one image are required.' });
   }
-  const imageUrls = req.files.map(f => '/images/uploads/' + f.filename);
-  const designs = readJSON(DESIGNS_FILE);
-  const newDesign = {
-    id:          Date.now().toString(),
-    title,
-    description: description || '',
-    category:    category    || 'Other',
-    price:       price       || '',
-    image:       imageUrls[0],   // primary image (first uploaded)
-    images:      imageUrls,      // all images
-    featured:    featured === 'true' || featured === true,
-    isNew:       isNew === 'true' || isNew === true,
-    createdAt:   new Date().toISOString()
-  };
-  designs.push(newDesign);
-  writeJSON(DESIGNS_FILE, designs);
-  res.json({ success: true, design: newDesign });
+  try {
+    const imageUrls = await Promise.all(
+      req.files.map(f => uploadImage(f.buffer, f.originalname))
+    );
+    const designs = readJSON(DESIGNS_FILE);
+    const newDesign = {
+      id:          Date.now().toString(),
+      title,
+      description: description || '',
+      category:    category    || 'Other',
+      price:       price       || '',
+      image:       imageUrls[0],   // primary image (first uploaded)
+      images:      imageUrls,      // all images
+      featured:    featured === 'true' || featured === true,
+      isNew:       isNew === 'true' || isNew === true,
+      createdAt:   new Date().toISOString()
+    };
+    designs.push(newDesign);
+    writeJSON(DESIGNS_FILE, designs);
+    res.json({ success: true, design: newDesign });
+  } catch (err) {
+    console.error('design upload error:', err);
+    res.status(500).json({ error: 'Image upload failed. Please try again.' });
+  }
 });
 
 // PATCH update design (title, description, category, featured, price; optionally add more images)
-app.patch('/admin/designs/:id', requireAdmin, upload.array('images', 10), (req, res) => {
+app.patch('/admin/designs/:id', requireAdmin, upload.array('images', 10), async (req, res) => {
   const designs = readJSON(DESIGNS_FILE);
   const idx = designs.findIndex(d => d.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Design not found.' });
@@ -358,10 +415,17 @@ app.patch('/admin/designs/:id', requireAdmin, upload.array('images', 10), (req, 
   if (isNew !== undefined) designs[idx].isNew = isNew === 'true' || isNew === true;
   // Append any newly uploaded images
   if (req.files && req.files.length > 0) {
-    const newUrls = req.files.map(f => '/images/uploads/' + f.filename);
-    const existing = designs[idx].images || [designs[idx].image];
-    designs[idx].images = [...existing, ...newUrls];
-    designs[idx].image  = designs[idx].images[0];
+    try {
+      const newUrls = await Promise.all(
+        req.files.map(f => uploadImage(f.buffer, f.originalname))
+      );
+      const existing = designs[idx].images || [designs[idx].image];
+      designs[idx].images = [...existing, ...newUrls];
+      designs[idx].image  = designs[idx].images[0];
+    } catch (err) {
+      console.error('design patch upload error:', err);
+      return res.status(500).json({ error: 'Image upload failed. Please try again.' });
+    }
   }
   // Ensure images array always exists
   if (!designs[idx].images) {
@@ -372,19 +436,14 @@ app.patch('/admin/designs/:id', requireAdmin, upload.array('images', 10), (req, 
 });
 
 // DELETE a single image from a design
-app.delete('/admin/designs/:id/images/:imgIndex', requireAdmin, (req, res) => {
+app.delete('/admin/designs/:id/images/:imgIndex', requireAdmin, async (req, res) => {
   const designs = readJSON(DESIGNS_FILE);
   const idx = designs.findIndex(d => d.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Design not found.' });
   const imgIdx = parseInt(req.params.imgIndex, 10);
   const images = designs[idx].images || [designs[idx].image];
   if (imgIdx < 0 || imgIdx >= images.length) return res.status(400).json({ error: 'Invalid image index.' });
-  // Remove image file if it is an upload
-  const imgPath = images[imgIdx];
-  if (imgPath && imgPath.startsWith('/images/uploads/')) {
-    const filePath = path.join(__dirname, 'public', imgPath);
-    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-  }
+  await deleteImage(images[imgIdx]);
   images.splice(imgIdx, 1);
   designs[idx].images = images;
   designs[idx].image  = images[0] || '';
@@ -393,19 +452,14 @@ app.delete('/admin/designs/:id/images/:imgIndex', requireAdmin, (req, res) => {
 });
 
 // DELETE a design (also removes all uploaded image files)
-app.delete('/admin/designs/:id', requireAdmin, (req, res) => {
+app.delete('/admin/designs/:id', requireAdmin, async (req, res) => {
   const designs = readJSON(DESIGNS_FILE);
   const idx = designs.findIndex(d => d.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Design not found.' });
   const removed = designs.splice(idx, 1)[0];
-  // Remove all uploaded image files
+  // Remove all image files (Cloudinary or local)
   const allImages = removed.images || (removed.image ? [removed.image] : []);
-  allImages.forEach(imgUrl => {
-    if (imgUrl && imgUrl.startsWith('/images/uploads/')) {
-      const imgPath = path.join(__dirname, 'public', imgUrl);
-      if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
-    }
-  });
+  await Promise.all(allImages.map(url => deleteImage(url)));
   writeJSON(DESIGNS_FILE, designs);
   res.json({ success: true });
 });
@@ -433,6 +487,8 @@ app.delete('/admin/contacts/:id', requireAdmin, (req, res) => {
 
 // ── Start ──────────────────────────────────────────────────
 app.listen(PORT, () => {
+  const storage = CLOUDINARY_ENABLED ? 'Cloudinary ☁️' : 'local disk 💾';
   console.log(`\n🌊 Sea Breeze Sewing BDA is running!`);
-  console.log(`   Open http://localhost:${PORT} in your browser\n`);
+  console.log(`   Open http://localhost:${PORT} in your browser`);
+  console.log(`   Image storage: ${storage}\n`);
 });

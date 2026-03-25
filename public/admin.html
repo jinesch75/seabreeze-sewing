@@ -158,6 +158,17 @@
       padding: 3px 8px;
       text-align: center;
     }
+    .add-photo-zone {
+      border: 2px dashed var(--turquoise);
+      border-radius: var(--radius);
+      padding: 20px;
+      text-align: center;
+      background: rgba(74,171,181,0.05);
+      margin-top: 8px;
+      margin-bottom: 18px;
+    }
+    .add-photo-zone p { margin: 0 0 12px; font-size: 0.9rem; color: var(--text-mid); }
+    .add-photo-zone .file-chosen { font-size: 0.82rem; color: var(--text-mid); margin: 8px 0 0; }
 
     /* ── Admin Shell ──────────────────────────────────── */
     .admin-shell { display: none; min-height: 100vh; }
@@ -831,16 +842,20 @@
             <!-- Image drop zone (multiple files supported) -->
             <div class="image-drop-zone" id="dropZone">
               <input type="file" id="imageInput" name="images" accept="image/*" multiple onchange="previewImages(this)">
+              <!-- Preview strip — lives INSIDE the drop zone so the zone is never an empty invisible click-trap -->
+              <div id="imagePreviewStrip" style="display:none;padding:10px 4px;text-align:center;">
+                <div id="previewThumbs" style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:8px;"></div>
+                <div style="font-size:0.75rem;color:var(--text-mid);">Click or drag to replace photos</div>
+              </div>
               <div id="dropContent">
                 <div class="drop-icon">🖼️</div>
                 <div class="drop-text">Click or drag & drop photos here</div>
                 <div class="drop-hint">Select one or more photos · JPG, PNG, WebP · up to 10 MB each</div>
               </div>
             </div>
-            <!-- Multi-image preview strip -->
-            <div id="imagePreviewStrip" style="display:none;margin-top:12px;">
-              <div id="previewThumbs" style="display:flex;flex-wrap:wrap;gap:10px;"></div>
-              <button type="button" onclick="clearImages()" style="margin-top:10px;background:none;border:none;color:#dc2626;font-size:0.85rem;cursor:pointer;font-family:'Lato',sans-serif;">✕ Remove all photos</button>
+            <!-- Remove button lives OUTSIDE the drop zone so clicking it never re-opens the file picker -->
+            <div id="clearImagesWrap" style="display:none;margin-top:6px;">
+              <button type="button" onclick="clearImages()" style="background:none;border:none;color:#dc2626;font-size:0.85rem;cursor:pointer;font-family:'Lato',sans-serif;">✕ Remove all photos</button>
             </div>
             <div class="upload-progress" id="uploadProgress">
               <div class="upload-progress-bar" id="uploadProgressBar"></div>
@@ -979,6 +994,21 @@
         <button onclick="closePhotoMoveModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-mid);padding:4px;">✕</button>
       </div>
       <div class="photo-grid" id="photoMoveGrid"></div>
+
+      <!-- Add photos to this design -->
+      <div class="add-photo-zone">
+        <p>➕ Add more photos to this design</p>
+        <label class="btn btn-outline btn-sm" style="cursor:pointer;display:inline-block;">
+          Choose Photos
+          <input type="file" id="addPhotoInput" accept="image/*" multiple style="display:none;"
+                 onchange="updateAddPhotoLabel(this)">
+        </label>
+        <div class="file-chosen" id="addPhotoLabel">No files selected</div>
+        <button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="addPhotosToDesign()" id="addPhotoBtn">
+          Upload
+        </button>
+      </div>
+
       <button class="btn btn-outline" onclick="closePhotoMoveModal()" style="width:100%;">Done</button>
     </div>
   </div>
