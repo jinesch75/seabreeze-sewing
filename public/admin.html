@@ -498,6 +498,51 @@
       width: 0%;
     }
 
+    /* ── Inline price edit row ────────────────────────── */
+    .price-edit-row {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: var(--sand);
+      border-radius: var(--radius);
+    }
+    .price-edit-row.open { display: flex; }
+    .price-edit-row input {
+      flex: 1;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.88rem;
+      background: white;
+      color: var(--text);
+    }
+    .price-edit-row .btn-save-price {
+      padding: 7px 16px;
+      background: var(--turquoise);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .price-edit-row .btn-save-price:hover { background: var(--turquoise-dark); }
+    .price-edit-row .btn-cancel-price {
+      padding: 7px 12px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.82rem;
+      color: var(--text-mid);
+      cursor: pointer;
+    }
+
     @media (max-width: 768px) {
       .upload-fields { grid-template-columns: 1fr; }
       .upload-fields .form-group:last-child { grid-column: auto; }
@@ -652,13 +697,13 @@
 
       <!-- ── About Page Tab ────────────────────────────── -->
       <div class="tab-panel" id="tab-about">
+
+        <!-- Profile Photo -->
         <div class="about-photo-section">
           <h3 style="margin-bottom:6px;">Profile / About Photo</h3>
           <p style="color:var(--text-mid);font-size:0.9rem;margin-bottom:24px;">
             This photo appears on the About page alongside your story. Upload a portrait or workshop photo.
           </p>
-
-          <!-- Current photo preview -->
           <div class="about-photo-current" id="aboutPhotoCurrentWrap">
             <div class="about-photo-placeholder" id="aboutPhotoPlaceholder">🌊</div>
             <img id="aboutPhotoImg" class="about-photo-preview" src="" alt="Profile photo" style="display:none;">
@@ -668,12 +713,9 @@
               <button id="aboutPhotoDeleteBtn" class="btn-sm-outline btn-sm-delete" onclick="deleteAboutPhoto()" style="display:none;">Remove Photo</button>
             </div>
           </div>
-
-          <!-- Upload new photo -->
           <form id="aboutPhotoForm" enctype="multipart/form-data">
             <div class="image-drop-zone" id="aboutDropZone" style="margin-bottom:16px;">
-              <input type="file" id="aboutPhotoInput" name="photo" accept="image/*"
-                onchange="previewAboutPhoto(this)">
+              <input type="file" id="aboutPhotoInput" name="photo" accept="image/*" onchange="previewAboutPhoto(this)">
               <div id="aboutDropContent">
                 <div class="drop-icon">📷</div>
                 <div class="drop-text">Click to choose a photo</div>
@@ -683,14 +725,43 @@
                 <img id="aboutPhotoNewImg" src="" alt="New photo" style="max-height:180px;border-radius:var(--radius);margin:0 auto;">
               </div>
             </div>
-            <button type="submit" class="btn btn-primary" id="aboutPhotoUploadBtn">
-              Upload Photo
-            </button>
-            <button type="button" onclick="clearAboutPhotoInput()" style="background:none;border:none;color:var(--text-mid);font-family:'Lato',sans-serif;font-size:0.85rem;cursor:pointer;margin-left:12px;" id="aboutPhotoClearBtn" style="display:none;">
-              Cancel
-            </button>
+            <button type="submit" class="btn btn-primary" id="aboutPhotoUploadBtn">Upload Photo</button>
+            <button type="button" onclick="clearAboutPhotoInput()" style="background:none;border:none;color:var(--text-mid);font-family:'Lato',sans-serif;font-size:0.85rem;cursor:pointer;margin-left:12px;" id="aboutPhotoClearBtn" style="display:none;">Cancel</button>
           </form>
         </div>
+
+        <!-- Homepage Workshop Photo -->
+        <div class="about-photo-section">
+          <h3 style="margin-bottom:6px;">🏡 Homepage Workshop Photo</h3>
+          <p style="color:var(--text-mid);font-size:0.9rem;margin-bottom:24px;">
+            This photo appears in the "Crafted with Love" section on the homepage. Use a workshop or lifestyle photo.
+          </p>
+          <div class="about-photo-current" id="workshopPhotoCurrentWrap">
+            <div class="about-photo-placeholder" id="workshopPhotoPlaceholder">🧵</div>
+            <img id="workshopPhotoAdminImg" class="about-photo-preview" src="" alt="Workshop photo" style="display:none;">
+            <div style="flex:1;">
+              <div id="workshopPhotoStatus" style="font-weight:700;margin-bottom:8px;">No photo uploaded yet</div>
+              <p style="font-size:0.85rem;color:var(--text-mid);margin-bottom:16px;">Upload a workshop or lifestyle photo to show on the homepage.</p>
+              <button id="workshopPhotoDeleteBtn" class="btn-sm-outline btn-sm-delete" onclick="deleteWorkshopPhoto()" style="display:none;">Remove Photo</button>
+            </div>
+          </div>
+          <form id="workshopPhotoForm" enctype="multipart/form-data">
+            <div class="image-drop-zone" id="workshopDropZone" style="margin-bottom:16px;">
+              <input type="file" id="workshopPhotoInput" name="photo" accept="image/*" onchange="previewWorkshopPhoto(this)">
+              <div id="workshopDropContent">
+                <div class="drop-icon">🖼️</div>
+                <div class="drop-text">Click to choose a photo</div>
+                <div class="drop-hint">JPG, PNG, WebP · up to 10 MB</div>
+              </div>
+              <div id="workshopPhotoNewPreview" style="display:none;text-align:center;">
+                <img id="workshopPhotoNewImg" src="" alt="New photo" style="max-height:180px;border-radius:var(--radius);margin:0 auto;">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="workshopPhotoUploadBtn">Upload Photo</button>
+            <button type="button" onclick="clearWorkshopPhotoInput()" style="background:none;border:none;color:var(--text-mid);font-family:'Lato',sans-serif;font-size:0.85rem;cursor:pointer;margin-left:12px;" id="workshopPhotoClearBtn" style="display:none;">Cancel</button>
+          </form>
+        </div>
+
       </div>
 
     </div>

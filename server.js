@@ -189,6 +189,35 @@ app.delete('/admin/settings/about-photo', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+// POST upload workshop / homepage photo
+app.post('/admin/settings/workshop-photo', requireAdmin, upload.single('photo'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No photo uploaded.' });
+  const url = '/images/uploads/' + req.file.filename;
+  let s = readJSON(SETTINGS_FILE);
+  if (!s || Array.isArray(s)) s = {};
+  // Remove old file if it was an upload
+  if (s.workshopPhoto && s.workshopPhoto.startsWith('/images/uploads/')) {
+    const old = path.join(__dirname, 'public', s.workshopPhoto);
+    if (fs.existsSync(old)) fs.unlinkSync(old);
+  }
+  s.workshopPhoto = url;
+  writeJSON(SETTINGS_FILE, s);
+  res.json({ success: true, url });
+});
+
+// DELETE workshop photo
+app.delete('/admin/settings/workshop-photo', requireAdmin, (req, res) => {
+  let s = readJSON(SETTINGS_FILE);
+  if (!s || Array.isArray(s)) s = {};
+  if (s.workshopPhoto && s.workshopPhoto.startsWith('/images/uploads/')) {
+    const fp = path.join(__dirname, 'public', s.workshopPhoto);
+    if (fs.existsSync(fp)) fs.unlinkSync(fp);
+  }
+  s.workshopPhoto = null;
+  writeJSON(SETTINGS_FILE, s);
+  res.json({ success: true });
+});
+
 // PATCH move a single image from one design to another
 app.patch('/admin/designs/:sourceId/move-image', requireAdmin, (req, res) => {
   const { imageIndex, targetDesignId } = req.body;
@@ -201,26 +230,31 @@ app.patch('/admin/designs/:sourceId/move-image', requireAdmin, (req, res) => {
   if (srcIdx === -1) return res.status(404).json({ error: 'Source design not found.' });
   if (tgtIdx === -1) return res.status(404).json({ error: 'Target design not found.' });
 
-  const srcImages = designs[srcIdx].images || [designs[srcIdx].image];
+  const srcImages = [...(designs[srcIdx].images || [designs[srcIdx].image])];
   const imgIdx    = parseInt(imageIndex, 10);
   if (imgIdx < 0 || imgIdx >= srcImages.length) {
     return res.status(400).json({ error: 'Invalid image index.' });
   }
-  if (srcImages.length === 1) {
-    return res.status(400).json({ error: 'Cannot move the last image out of a design. Delete the design instead.' });
-  }
 
+  const willDeleteSource = srcImages.length === 1;
+
+  // Move photo to target
   const [movedUrl] = srcImages.splice(imgIdx, 1);
-  designs[srcIdx].images = srcImages;
-  designs[srcIdx].image  = srcImages[0] || '';
-
-  const tgtImages = designs[tgtIdx].images || [designs[tgtIdx].image];
+  const tgtImages = [...(designs[tgtIdx].images || [designs[tgtIdx].image])];
   tgtImages.push(movedUrl);
   designs[tgtIdx].images = tgtImages;
   designs[tgtIdx].image  = tgtImages[0];
 
+  if (willDeleteSource) {
+    // Source has no images left — delete the design entirely
+    designs.splice(srcIdx, 1);
+  } else {
+    designs[srcIdx].images = srcImages;
+    designs[srcIdx].image  = srcImages[0] || '';
+  }
+
   writeJSON(DESIGNS_FILE, designs);
-  res.json({ success: true });
+  res.json({ success: true, sourceDeleted: willDeleteSource });
 });
 
 // GET all designs (admin — includes full data)

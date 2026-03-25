@@ -71,7 +71,7 @@ function switchTab(tab) {
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + tab)?.classList.add('active');
-  if (tab === 'about') loadAboutSettings();
+  if (tab === 'about') { loadAboutSettings(); loadWorkshopSettings(); }
 }
 
 // ── Multi-image preview ───────────────────────────────────
@@ -216,7 +216,7 @@ async function loadDesigns() {
     list.innerHTML = designs.map(d => {
       const photoCount = (d.images && d.images.length > 1) ? d.images.length : 1;
       return `
-      <div class="admin-design-item" id="di-${d.id}">
+      <div class="admin-design-item" id="di-${d.id}" style="flex-wrap:wrap;">
         <img class="admin-design-thumb" src="${d.image}" alt="${escHtml(d.title)}"
           onerror="this.style.opacity='0.3'">
         <div class="admin-design-info">
@@ -224,12 +224,29 @@ async function loadDesigns() {
           <div class="admin-design-meta">
             <span class="tag">${escHtml(d.category)}</span>
             ${d.featured ? '<span class="tag featured">★ Featured</span>' : ''}
-            ${d.price ? `<span class="tag" style="background:rgba(201,149,106,0.15);color:#8a5a2a;">💰 ${escHtml(d.price)}</span>` : ''}
+            ${d.price
+              ? `<span class="tag" style="background:rgba(201,149,106,0.15);color:#8a5a2a;">💰 ${escHtml(d.price)}</span>`
+              : '<span class="tag" style="opacity:0.5;">No price</span>'}
             ${photoCount > 1 ? `<span class="tag">🖼 ${photoCount} photos</span>` : ''}
             <span>Added ${formatDate(d.createdAt)}</span>
           </div>
+          <!-- Inline price editor -->
+          <div class="price-edit-row" id="price-row-${d.id}">
+            <input type="text" id="price-input-${d.id}"
+              value="${escHtml(d.price || '')}"
+              placeholder="e.g. $45 USD"
+              onkeydown="if(event.key==='Enter'){savePrice('${d.id}');}if(event.key==='Escape'){closePriceEdit('${d.id}');}">
+            <button class="btn-save-price" onclick="savePrice('${d.id}')">Save</button>
+            <button class="btn-cancel-price" onclick="closePriceEdit('${d.id}')">Cancel</button>
+          </div>
         </div>
         <div class="admin-design-actions">
+          <button class="btn-icon btn-icon-toggle"
+            title="Edit price"
+            onclick="openPriceEdit('${d.id}')"
+            style="background:rgba(201,149,106,0.12);color:#8a5a2a;font-size:0.75rem;width:auto;border-radius:8px;padding:0 10px;font-weight:700;font-family:'Lato',sans-serif;">
+            💲 Price
+          </button>
           <button class="btn-icon btn-icon-toggle"
             title="Reorganise photos"
             onclick="openPhotoMoveModal('${d.id}')"
@@ -440,6 +457,128 @@ async function deleteAboutPhoto() {
   }
 }
 
+// ── Workshop / Homepage Photo ──────────────────────────────
+async function loadWorkshopSettings() {
+  try {
+    const res  = await fetch('/admin/settings');
+    const s    = await res.json();
+    const img  = document.getElementById('workshopPhotoAdminImg');
+    const ph   = document.getElementById('workshopPhotoPlaceholder');
+    const stat = document.getElementById('workshopPhotoStatus');
+    const del  = document.getElementById('workshopPhotoDeleteBtn');
+    if (s.workshopPhoto) {
+      img.src = s.workshopPhoto;
+      img.style.display = 'block';
+      ph.style.display  = 'none';
+      stat.textContent  = 'Workshop photo uploaded ✓';
+      del.style.display = 'inline-block';
+    } else {
+      img.style.display = 'none';
+      ph.style.display  = 'flex';
+      stat.textContent  = 'No photo uploaded yet';
+      del.style.display = 'none';
+    }
+  } catch {}
+}
+
+function previewWorkshopPhoto(input) {
+  if (!input.files || input.files.length === 0) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('workshopDropContent').style.display = 'none';
+    const preview = document.getElementById('workshopPhotoNewPreview');
+    preview.style.display = 'block';
+    document.getElementById('workshopPhotoNewImg').src = e.target.result;
+    document.getElementById('workshopPhotoClearBtn').style.display = 'inline';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function clearWorkshopPhotoInput() {
+  document.getElementById('workshopPhotoInput').value = '';
+  document.getElementById('workshopDropContent').style.display = '';
+  document.getElementById('workshopPhotoNewPreview').style.display = 'none';
+  document.getElementById('workshopPhotoClearBtn').style.display = 'none';
+}
+
+document.getElementById('workshopPhotoForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('workshopPhotoInput');
+  if (!input.files || input.files.length === 0) {
+    showToast('Please select a photo first.', 'error');
+    return;
+  }
+  const btn = document.getElementById('workshopPhotoUploadBtn');
+  btn.disabled = true; btn.textContent = 'Uploading…';
+  const fd = new FormData();
+  fd.append('photo', input.files[0]);
+  try {
+    const res  = await fetch('/admin/settings/workshop-photo', { method: 'POST', body: fd });
+    const json = await res.json();
+    if (json.success) {
+      showToast('Homepage workshop photo updated!', 'success');
+      clearWorkshopPhotoInput();
+      loadWorkshopSettings();
+    } else {
+      showToast(json.error || 'Upload failed.', 'error');
+    }
+  } catch {
+    showToast('Upload error. Please try again.', 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Upload Photo';
+});
+
+async function deleteWorkshopPhoto() {
+  if (!confirm('Remove the homepage workshop photo?')) return;
+  try {
+    await fetch('/admin/settings/workshop-photo', { method: 'DELETE' });
+    showToast('Photo removed.', 'success');
+    loadWorkshopSettings();
+  } catch {
+    showToast('Could not remove photo.', 'error');
+  }
+}
+
+// ── Inline Price Editing ──────────────────────────────────
+function openPriceEdit(id) {
+  // Close any other open price editors first
+  document.querySelectorAll('.price-edit-row.open').forEach(r => r.classList.remove('open'));
+  const row = document.getElementById('price-row-' + id);
+  if (row) {
+    row.classList.add('open');
+    const input = document.getElementById('price-input-' + id);
+    if (input) { input.focus(); input.select(); }
+  }
+}
+
+function closePriceEdit(id) {
+  const row = document.getElementById('price-row-' + id);
+  if (row) row.classList.remove('open');
+}
+
+async function savePrice(id) {
+  const input = document.getElementById('price-input-' + id);
+  if (!input) return;
+  const newPrice = input.value.trim();
+  try {
+    const res = await fetch(`/admin/designs/${id}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ price: newPrice })
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast('Price updated!', 'success');
+      closePriceEdit(id);
+      loadDesigns();
+    } else {
+      showToast(json.error || 'Could not update price.', 'error');
+    }
+  } catch {
+    showToast('Could not update price.', 'error');
+  }
+}
+
 // ── Photo Move Modal ──────────────────────────────────────
 let allDesignsCache = [];
 
@@ -463,8 +602,15 @@ async function openPhotoMoveModal(designId) {
   document.getElementById('photoMoveSubtitle').textContent =
     `${images.length} photo${images.length !== 1 ? 's' : ''} — use the dropdowns to move any photo to a different design.`;
 
+  const isLastPhoto = images.length === 1;
+
   const grid = document.getElementById('photoMoveGrid');
-  grid.innerHTML = images.map((src, i) => {
+  grid.innerHTML = (isLastPhoto
+    ? `<div style="grid-column:1/-1;padding:14px 16px;background:#fef9ec;border:1px solid #f5c842;border-radius:var(--radius);font-size:0.88rem;color:#7a5f00;margin-bottom:4px;">
+        ⚠️ This design has only one photo. Moving it will <strong>permanently delete this design</strong> and move the photo to the chosen design.
+       </div>`
+    : '') +
+  images.map((src, i) => {
     const opts = otherDesigns.map(d =>
       `<option value="${escHtml(d.id)}">${escHtml(d.title.substring(0,28))}${d.title.length > 28 ? '…' : ''}</option>`
     ).join('');
@@ -477,7 +623,7 @@ async function openPhotoMoveModal(designId) {
             <option value="">— Move to design… —</option>
             ${opts}
           </select>
-          <button onclick="movePhoto('${escAttr(designId)}', ${i})">Move Photo</button>
+          <button onclick="movePhoto('${escAttr(designId)}', ${i})">${isLastPhoto ? 'Move & Delete Design' : 'Move Photo'}</button>
         </div>
       </div>`;
   }).join('');
@@ -508,10 +654,15 @@ async function movePhoto(sourceId, imageIndex) {
     const json = await res.json();
     if (json.success) {
       const targetName = allDesignsCache.find(d => d.id === targetId)?.title || targetId;
-      showToast(`Photo moved to "${targetName}"!`, 'success');
-      // Re-open modal for same design with updated photos
-      closePhotoMoveModal();
-      setTimeout(() => openPhotoMoveModal(sourceId), 400);
+      if (json.sourceDeleted) {
+        showToast(`Photo moved to "${targetName}" — empty design was deleted.`, 'success');
+        closePhotoMoveModal();
+      } else {
+        showToast(`Photo moved to "${targetName}"!`, 'success');
+        // Re-open modal for same design with updated photos
+        closePhotoMoveModal();
+        setTimeout(() => openPhotoMoveModal(sourceId), 400);
+      }
     } else {
       showToast(json.error || 'Move failed.', 'error');
     }
