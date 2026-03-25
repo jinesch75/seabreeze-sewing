@@ -33,9 +33,6 @@
     <div class="hero-overlay"></div>
     <div class="container">
       <div class="hero-layout">
-        <!-- Left photo column -->
-        <div class="hero-photos-col hero-photos-left" id="heroPhotosLeft"></div>
-
         <!-- Centre content -->
         <div class="hero-content">
           <div class="hero-badge">
@@ -53,8 +50,8 @@
           </div>
         </div>
 
-        <!-- Right photo column -->
-        <div class="hero-photos-col hero-photos-right" id="heroPhotosRight"></div>
+        <!-- Right: 3-photo overlapping fan -->
+        <div class="hero-photos-fan" id="heroPhotosFan"></div>
       </div>
     </div>
     <div class="hero-scroll">
@@ -90,15 +87,6 @@
       </div>
     </div>
   </section>
-
-  <!-- ── Highlight Strip ───────────────────────────────── -->
-  <div class="highlight-strip">
-    <div class="container">
-      <h2>Interested in a Design?</h2>
-      <p>No online checkout — just a simple message. We'll arrange everything personally.</p>
-      <a href="/contact.html" class="btn btn-white">Get in Touch</a>
-    </div>
-  </div>
 
   <!-- ── About Snippet ─────────────────────────────────── -->
   <section class="section">
@@ -216,34 +204,47 @@
       color: white;
     }
 
-    /* ── Hero layout with side photo columns ─────────── */
+    /* ── Hero layout ─────────────────────────────────── */
     .hero-layout {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 44px;
+      gap: 64px;
     }
-    .hero-photos-col {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
+
+    /* ── Three-photo overlapping fan ─────────────────── */
+    .hero-photos-fan {
+      position: relative;
+      width: 230px;
+      height: 270px;
       flex-shrink: 0;
     }
-    .hero-photo-item {
-      width: 145px;
-      height: 175px;
-      border-radius: 14px;
+    .hero-fan-photo {
+      position: absolute;
+      width: 120px;
+      height: 155px;
+      border-radius: 12px;
       object-fit: cover;
-      box-shadow: 0 12px 32px rgba(0,0,0,0.38);
-      border: 3px solid rgba(255,255,255,0.22);
-      display: block;
+      box-shadow: 0 14px 36px rgba(0,0,0,0.42);
+      border: 3px solid rgba(255,255,255,0.28);
     }
-    .hero-photos-left  .hero-photo-item:nth-child(odd)  { transform: translateX(-10px) rotate(-2deg); }
-    .hero-photos-left  .hero-photo-item:nth-child(even) { transform: translateX(10px) rotate(1.5deg); }
-    .hero-photos-right .hero-photo-item:nth-child(odd)  { transform: translateX(10px) rotate(2deg); }
-    .hero-photos-right .hero-photo-item:nth-child(even) { transform: translateX(-10px) rotate(-1.5deg); }
-    @media (max-width: 1100px) {
-      .hero-photos-col { display: none; }
+    .hero-fan-photo:nth-child(1) {
+      top: 40px; left: 0px;
+      transform: rotate(-9deg);
+      z-index: 1;
+    }
+    .hero-fan-photo:nth-child(2) {
+      top: 20px; left: 52px;
+      transform: rotate(1deg);
+      z-index: 2;
+    }
+    .hero-fan-photo:nth-child(3) {
+      top: 50px; left: 104px;
+      transform: rotate(8deg);
+      z-index: 3;
+    }
+    @media (max-width: 1000px) {
+      .hero-photos-fan { display: none; }
     }
   </style>
 
@@ -251,7 +252,7 @@
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
 
-      // ── Load hero side photos ────────────────────────
+      // ── Load hero fan photos (3 overlapping) ─────────
       try {
         // First try to use admin-chosen hero photos from settings
         const sr   = await fetch('/api/settings');
@@ -265,20 +266,12 @@
           const ds = await dr.json();
           srcs = ds.map(d => d.image || (d.images && d.images[0]) || '').filter(Boolean);
         }
-        const leftEl  = document.getElementById('heroPhotosLeft');
-        const rightEl = document.getElementById('heroPhotosRight');
-        if (leftEl && srcs.length >= 1) {
-          leftEl.innerHTML = srcs.slice(0, 2).map(s =>
-            `<img class="hero-photo-item" src="${s}" alt="Design photo" loading="lazy" onerror="this.style.display='none'">`
-          ).join('');
-        }
-        if (rightEl && srcs.length >= 3) {
-          rightEl.innerHTML = srcs.slice(2, 4).map(s =>
-            `<img class="hero-photo-item" src="${s}" alt="Design photo" loading="lazy" onerror="this.style.display='none'">`
-          ).join('');
-        } else if (rightEl && srcs.length >= 2) {
-          rightEl.innerHTML = srcs.slice(0, 2).map(s =>
-            `<img class="hero-photo-item" src="${s}" alt="Design photo" loading="lazy" onerror="this.style.display='none'">`
+        const fanEl = document.getElementById('heroPhotosFan');
+        if (fanEl && srcs.length >= 1) {
+          // Use up to 3 photos for the fan; cycle back if fewer available
+          const picks = [srcs[0], srcs[1] || srcs[0], srcs[2] || srcs[0]];
+          fanEl.innerHTML = picks.map(src =>
+            `<img class="hero-fan-photo" src="${src}" alt="Design photo" loading="lazy" onerror="this.style.display='none'">`
           ).join('');
         }
       } catch {}
