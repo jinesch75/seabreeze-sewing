@@ -4,9 +4,11 @@ node_modules/
 # Uploaded photos (these live on the server — not tracked in git)
 public/images/uploads/
 
-# Data files (contacts & designs managed on server — optional: remove these
-# lines if you DO want to commit your initial designs.json)
-# data/contacts.json
+# Data files — these are managed live on the server (admin uploads, contacts,
+# settings). They must NOT be overwritten when you pull code changes from GitHub.
+data/settings.json
+data/designs.json
+data/contacts.json
 
 # OS / editor junk
 .DS_Store

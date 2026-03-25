@@ -276,19 +276,23 @@ async function loadDesigns() {
                 <label>Description</label>
                 <textarea id="edit-desc-${d.id}" rows="2" placeholder="Describe the design…">${escHtml(d.description || '')}</textarea>
               </div>
-              <div class="full" style="display:flex;align-items:center;gap:12px;">
+              <div class="full">
                 <label class="featured-toggle" for="edit-isnew-${d.id}"
-                  style="flex:1;padding:9px 14px;margin:0;background:white;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;">
+                  style="padding:9px 14px;margin:0;max-width:360px;background:white;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;">
                   <input type="checkbox" id="edit-isnew-${d.id}" ${d.isNew ? 'checked' : ''}>
                   <div class="toggle-switch"></div>
                   <div>
                     <div class="toggle-label" style="font-size:0.82rem;">🆕 Mark as New</div>
-                    <div class="toggle-hint">Show "NEW" badge on this design</div>
+                    <div class="toggle-hint" style="font-size:0.75rem;">Show "NEW" badge on this design</div>
                   </div>
                 </label>
+              </div>
+              <div class="full" style="margin-top:4px;">
+                <label style="font-size:0.8rem;font-weight:700;color:var(--text-mid);display:block;margin-bottom:6px;">Photos</label>
                 <button type="button" onclick="openPhotoMoveModal('${d.id}')"
-                  style="padding:9px 14px;background:var(--sand);border:1px solid var(--border);border-radius:var(--radius);font-family:'Lato',sans-serif;font-size:0.82rem;font-weight:700;color:var(--turquoise-dark);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:var(--transition);">
-                  📂 Photos (${photoCount})
+                  style="padding:9px 18px;background:var(--sand);border:2px solid var(--turquoise);border-radius:var(--radius);font-family:'Lato',sans-serif;font-size:0.85rem;font-weight:700;color:var(--turquoise-dark);cursor:pointer;transition:var(--transition);display:inline-flex;align-items:center;gap:8px;">
+                  📷 Click here to change or reorganise photos
+                  <span style="background:var(--turquoise);color:white;border-radius:50px;padding:1px 9px;font-size:0.75rem;">${photoCount}</span>
                 </button>
               </div>
             </div>
