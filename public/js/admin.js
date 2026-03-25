@@ -895,6 +895,7 @@ async function setMainPhoto(designId, imageIndex) {
 
 // ── Hero Photos Picker ────────────────────────────────────
 let heroSelectedPhotos = [];
+let heroCachedPhotos = [];
 
 async function loadHeroPhotoPicker() {
   const picker = document.getElementById('heroPhotoPicker');
@@ -919,25 +920,33 @@ async function loadHeroPhotoPicker() {
       const imgs = d.images && d.images.length > 0 ? d.images : (d.image ? [d.image] : []);
       imgs.forEach(url => { if (url && !allPhotos.includes(url)) allPhotos.push(url); });
     });
+    heroCachedPhotos = allPhotos;
 
     if (allPhotos.length === 0) {
       picker.innerHTML = '<div style="grid-column:1/-1;color:var(--text-light);text-align:center;padding:20px;">No design photos uploaded yet.</div>';
       return;
     }
 
-    picker.innerHTML = allPhotos.map(url => {
-      const sel = heroSelectedPhotos.includes(url);
-      const ord = heroSelectedPhotos.indexOf(url) + 1;
-      return `
-        <div class="hero-pick-item ${sel ? 'selected' : ''}" id="hpi-${btoa(url).replace(/=/g,'')}"
-          onclick="toggleHeroPhoto('${escAttr(url)}')">
-          <img src="${escHtml(url)}" alt="Design photo" loading="lazy" onerror="this.parentElement.style.display='none'">
-          ${sel ? `<div class="pick-order">${ord}</div>` : ''}
-        </div>`;
-    }).join('');
+    renderHeroPickerGrid();
   } catch {
     picker.innerHTML = '<div style="grid-column:1/-1;color:#dc2626;text-align:center;padding:20px;">Could not load photos.</div>';
   }
+}
+
+function renderHeroPickerGrid() {
+  const picker = document.getElementById('heroPhotoPicker');
+  if (!picker) return;
+  if (heroCachedPhotos.length === 0) return;
+  picker.innerHTML = heroCachedPhotos.map(url => {
+    const sel = heroSelectedPhotos.includes(url);
+    const ord = heroSelectedPhotos.indexOf(url) + 1;
+    return `
+      <div class="hero-pick-item ${sel ? 'selected' : ''}" id="hpi-${btoa(url).replace(/=/g,'')}"
+        onclick="toggleHeroPhoto('${escAttr(url)}')">
+        <img src="${escHtml(url)}" alt="Design photo" loading="lazy" onerror="this.parentElement.style.display='none'">
+        ${sel ? `<div class="pick-order">${ord}</div>` : ''}
+      </div>`;
+  }).join('');
 }
 
 function toggleHeroPhoto(url) {
@@ -952,8 +961,8 @@ function toggleHeroPhoto(url) {
     heroSelectedPhotos.push(url);
   }
   updateHeroPreview();
-  // Update item styling
-  loadHeroPhotoPicker();
+  // Re-render grid using cached photos — no server round-trip
+  renderHeroPickerGrid();
 }
 
 function updateHeroPreview() {
