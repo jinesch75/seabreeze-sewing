@@ -218,6 +218,62 @@ app.delete('/admin/settings/workshop-photo', requireAdmin, (req, res) => {
   res.json({ success: true });
 });
 
+// PATCH set main/primary image for a design (moves chosen index to position 0)
+app.patch('/admin/designs/:id/set-main-image', requireAdmin, (req, res) => {
+  const { imageIndex } = req.body;
+  const designs = readJSON(DESIGNS_FILE);
+  const idx = designs.findIndex(d => d.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'Design not found.' });
+  const images = [...(designs[idx].images || [designs[idx].image])];
+  const imgIdx = parseInt(imageIndex, 10);
+  if (imgIdx < 0 || imgIdx >= images.length) return res.status(400).json({ error: 'Invalid image index.' });
+  const [selected] = images.splice(imgIdx, 1);
+  images.unshift(selected);
+  designs[idx].images = images;
+  designs[idx].image  = images[0];
+  writeJSON(DESIGNS_FILE, designs);
+  res.json({ success: true });
+});
+
+// GET categories list (public)
+app.get('/api/categories', (req, res) => {
+  const s = readJSON(SETTINGS_FILE);
+  res.json((!s || Array.isArray(s)) ? [] : (s.categories || []));
+});
+
+// POST add category (admin)
+app.post('/admin/settings/categories', requireAdmin, (req, res) => {
+  const { name } = req.body;
+  if (!name || !name.trim()) return res.status(400).json({ error: 'Category name required.' });
+  let s = readJSON(SETTINGS_FILE);
+  if (!s || Array.isArray(s)) s = {};
+  if (!s.categories) s.categories = [];
+  const clean = name.trim();
+  if (!s.categories.includes(clean)) s.categories.push(clean);
+  writeJSON(SETTINGS_FILE, s);
+  res.json({ success: true, categories: s.categories });
+});
+
+// DELETE a category (admin)
+app.delete('/admin/settings/categories/:name', requireAdmin, (req, res) => {
+  let s = readJSON(SETTINGS_FILE);
+  if (!s || Array.isArray(s)) s = {};
+  s.categories = (s.categories || []).filter(c => c !== decodeURIComponent(req.params.name));
+  writeJSON(SETTINGS_FILE, s);
+  res.json({ success: true, categories: s.categories });
+});
+
+// PUT/replace hero photos array (admin) — up to 4 photo URLs
+app.put('/admin/settings/hero-photos', requireAdmin, (req, res) => {
+  const { photos } = req.body;
+  if (!Array.isArray(photos)) return res.status(400).json({ error: 'photos must be an array.' });
+  let s = readJSON(SETTINGS_FILE);
+  if (!s || Array.isArray(s)) s = {};
+  s.heroPhotos = photos.slice(0, 4);
+  writeJSON(SETTINGS_FILE, s);
+  res.json({ success: true, heroPhotos: s.heroPhotos });
+});
+
 // PATCH move a single image from one design to another
 app.patch('/admin/designs/:sourceId/move-image', requireAdmin, (req, res) => {
   const { imageIndex, targetDesignId } = req.body;

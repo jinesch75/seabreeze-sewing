@@ -355,7 +355,7 @@ ul { list-style: none; }
 }
 .design-card-img {
   position: relative;
-  aspect-ratio: 4/5;
+  height: 175px;
   overflow: hidden;
   background: var(--sand-dark);
 }
@@ -424,7 +424,7 @@ ul { list-style: none; }
 /* ── Multi-photo gallery in design card ──────────────────── */
 .card-gallery {
   position: relative;
-  aspect-ratio: 4/5;
+  height: 175px;
   overflow: hidden;
   background: var(--sand-dark);
 }

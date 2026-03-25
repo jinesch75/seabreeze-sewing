@@ -57,6 +57,7 @@ function showAdminShell() {
   document.getElementById('adminShell').style.display   = 'block';
   loadDesigns();
   loadContacts();
+  loadCategories();
 }
 
 // ── Tabs ──────────────────────────────────────────────────
@@ -71,7 +72,23 @@ function switchTab(tab) {
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + tab)?.classList.add('active');
-  if (tab === 'about') { loadAboutSettings(); loadWorkshopSettings(); }
+  if (tab === 'about') { loadAboutSettings(); loadWorkshopSettings(); loadHeroPhotoPicker(); }
+  if (tab === 'designs') { loadCategories(); }
+}
+
+// ── Price helpers ─────────────────────────────────────────
+function parsePriceNum(priceStr) {
+  // "$45 USD" → "45"
+  if (!priceStr) return '';
+  const m = String(priceStr).match(/[\d.]+/);
+  return m ? m[0] : '';
+}
+function formatPriceStr(numVal) {
+  // "45" → "$45 USD"
+  if (numVal === '' || numVal === null || numVal === undefined) return '';
+  const n = parseFloat(numVal);
+  if (isNaN(n) || n < 0) return '';
+  return '$' + (n % 1 === 0 ? Math.round(n) : n.toFixed(2)) + ' USD';
 }
 
 // ── Multi-image preview ───────────────────────────────────
@@ -160,6 +177,13 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
     bar.style.width = pct + '%';
   }, 120);
 
+  // Format price from number input → "$N USD"
+  const priceAmountEl = document.getElementById('uploadPriceAmount');
+  const priceHiddenEl = document.getElementById('uploadPrice');
+  if (priceAmountEl && priceHiddenEl) {
+    priceHiddenEl.value = formatPriceStr(priceAmountEl.value);
+  }
+
   const formData = new FormData(e.target);
 
   try {
@@ -173,6 +197,9 @@ document.getElementById('uploadForm').addEventListener('submit', async (e) => {
       const count = json.design.images ? json.design.images.length : 1;
       showToast(`Design uploaded with ${count} photo${count !== 1 ? 's' : ''}!`, 'success');
       e.target.reset();
+      // Restore default price amount after reset
+      const pa = document.getElementById('uploadPriceAmount');
+      if (pa) pa.value = '45';
       clearImages();
       setTimeout(() => { prog.style.display = 'none'; bar.style.width = '0%'; }, 800);
       loadDesigns();
@@ -215,6 +242,7 @@ async function loadDesigns() {
 
     list.innerHTML = designs.map(d => {
       const photoCount = (d.images && d.images.length > 1) ? d.images.length : 1;
+      const priceNum   = parsePriceNum(d.price);
       return `
       <div class="admin-design-item" id="di-${d.id}" style="flex-wrap:wrap;">
         <img class="admin-design-thumb" src="${d.image}" alt="${escHtml(d.title)}"
@@ -232,15 +260,48 @@ async function loadDesigns() {
           </div>
           <!-- Inline price editor -->
           <div class="price-edit-row" id="price-row-${d.id}">
-            <input type="text" id="price-input-${d.id}"
-              value="${escHtml(d.price || '')}"
-              placeholder="e.g. $45 USD"
-              onkeydown="if(event.key==='Enter'){savePrice('${d.id}');}if(event.key==='Escape'){closePriceEdit('${d.id}');}">
+            <div class="price-input-wrap">
+              <span>$</span>
+              <input type="number" id="price-input-${d.id}"
+                value="${escHtml(priceNum)}"
+                placeholder="45" min="0" step="1"
+                onkeydown="if(event.key==='Enter'){savePrice('${d.id}');}if(event.key==='Escape'){closePriceEdit('${d.id}');}">
+              <span>USD</span>
+            </div>
             <button class="btn-save-price" onclick="savePrice('${d.id}')">Save</button>
             <button class="btn-cancel-price" onclick="closePriceEdit('${d.id}')">Cancel</button>
           </div>
+          <!-- Inline design editor (title, description, category) -->
+          <div class="design-edit-row" id="edit-row-${d.id}">
+            <div class="edit-fields">
+              <div>
+                <label>Title</label>
+                <input type="text" id="edit-title-${d.id}" value="${escHtml(d.title)}" placeholder="Design title">
+              </div>
+              <div>
+                <label>Category</label>
+                <select id="edit-cat-${d.id}">
+                  ${buildCategoryOptions(d.category)}
+                </select>
+              </div>
+              <div class="full">
+                <label>Description</label>
+                <textarea id="edit-desc-${d.id}" rows="3" placeholder="Describe the design…">${escHtml(d.description || '')}</textarea>
+              </div>
+            </div>
+            <div class="design-edit-actions">
+              <button class="btn-save-edit" onclick="saveEditDesign('${d.id}')">Save Changes</button>
+              <button class="btn-cancel-edit" onclick="closeEditDesign('${d.id}')">Cancel</button>
+            </div>
+          </div>
         </div>
         <div class="admin-design-actions">
+          <button class="btn-icon btn-icon-toggle"
+            title="Edit title, description, category"
+            onclick="openEditDesign('${d.id}')"
+            style="background:rgba(74,171,181,0.1);color:var(--turquoise-dark);font-size:0.75rem;width:auto;border-radius:8px;padding:0 10px;font-weight:700;font-family:'Lato',sans-serif;">
+            ✏️ Edit
+          </button>
           <button class="btn-icon btn-icon-toggle"
             title="Edit price"
             onclick="openPriceEdit('${d.id}')"
@@ -248,7 +309,7 @@ async function loadDesigns() {
             💲 Price
           </button>
           <button class="btn-icon btn-icon-toggle"
-            title="Reorganise photos"
+            title="Reorganise photos / set main photo"
             onclick="openPhotoMoveModal('${d.id}')"
             style="background:var(--sand);color:var(--turquoise-dark);font-size:0.8rem;width:auto;border-radius:8px;padding:0 10px;font-weight:700;font-family:'Lato',sans-serif;">
             📂 Photos
@@ -559,7 +620,7 @@ function closePriceEdit(id) {
 async function savePrice(id) {
   const input = document.getElementById('price-input-' + id);
   if (!input) return;
-  const newPrice = input.value.trim();
+  const newPrice = formatPriceStr(input.value.trim());
   try {
     const res = await fetch(`/admin/designs/${id}`, {
       method:  'PATCH',
@@ -576,6 +637,142 @@ async function savePrice(id) {
     }
   } catch {
     showToast('Could not update price.', 'error');
+  }
+}
+
+// ── Inline Design Edit (title, description, category) ────
+let adminCategoriesCache = [];
+
+function buildCategoryOptions(selected) {
+  const cats = adminCategoriesCache.length
+    ? adminCategoriesCache
+    : ['Dresses','Tops','Sets','Skirts','Accessories','Other'];
+  // Include current category even if not in managed list
+  const all = selected && !cats.includes(selected) ? [selected, ...cats] : cats;
+  return all.map(c =>
+    `<option value="${escHtml(c)}" ${c === selected ? 'selected' : ''}>${escHtml(c)}</option>`
+  ).join('');
+}
+
+function openEditDesign(id) {
+  // Close any other open edit rows
+  document.querySelectorAll('.design-edit-row.open').forEach(r => r.classList.remove('open'));
+  document.querySelectorAll('.price-edit-row.open').forEach(r => r.classList.remove('open'));
+  const row = document.getElementById('edit-row-' + id);
+  if (row) row.classList.add('open');
+}
+
+function closeEditDesign(id) {
+  const row = document.getElementById('edit-row-' + id);
+  if (row) row.classList.remove('open');
+}
+
+async function saveEditDesign(id) {
+  const titleEl = document.getElementById('edit-title-' + id);
+  const descEl  = document.getElementById('edit-desc-' + id);
+  const catEl   = document.getElementById('edit-cat-' + id);
+  if (!titleEl) return;
+  const title       = titleEl.value.trim();
+  const description = descEl ? descEl.value.trim() : '';
+  const category    = catEl  ? catEl.value : '';
+  if (!title) { showToast('Title cannot be empty.', 'error'); return; }
+  try {
+    const res = await fetch(`/admin/designs/${id}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ title, description, category })
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast('Design updated!', 'success');
+      closeEditDesign(id);
+      loadDesigns();
+    } else {
+      showToast(json.error || 'Could not update design.', 'error');
+    }
+  } catch {
+    showToast('Could not update design.', 'error');
+  }
+}
+
+// ── Categories Manager ────────────────────────────────────
+async function loadCategories() {
+  try {
+    const res  = await fetch('/admin/settings');
+    const s    = await res.json();
+    let cats   = s.categories || [];
+    // Auto-init from designs if empty
+    if (cats.length === 0) {
+      const dr = await fetch('/admin/designs');
+      const ds = await dr.json();
+      cats = [...new Set(ds.map(d => d.category).filter(Boolean))];
+      if (cats.length > 0) {
+        // Save them to settings
+        for (const c of cats) {
+          await fetch('/admin/settings/categories', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: c })
+          });
+        }
+      }
+    }
+    adminCategoriesCache = cats;
+    renderCategoryTags(cats);
+  } catch {}
+}
+
+function renderCategoryTags(cats) {
+  const el = document.getElementById('categoriesTags');
+  if (!el) return;
+  if (cats.length === 0) {
+    el.innerHTML = '<span style="color:var(--text-light);font-size:0.85rem;">No categories yet — add one below.</span>';
+    return;
+  }
+  el.innerHTML = cats.map(c => `
+    <div class="cat-tag">
+      ${escHtml(c)}
+      <button class="cat-tag-del" title="Delete category" onclick="deleteCategory('${escAttr(c)}')">×</button>
+    </div>`).join('');
+}
+
+async function addCategory() {
+  const input = document.getElementById('newCategoryInput');
+  if (!input) return;
+  const name = input.value.trim();
+  if (!name) { showToast('Please enter a category name.', 'error'); return; }
+  try {
+    const res  = await fetch('/admin/settings/categories', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ name })
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast(`Category "${name}" added!`, 'success');
+      input.value = '';
+      adminCategoriesCache = json.categories;
+      renderCategoryTags(json.categories);
+    } else {
+      showToast(json.error || 'Could not add category.', 'error');
+    }
+  } catch {
+    showToast('Could not add category.', 'error');
+  }
+}
+
+async function deleteCategory(name) {
+  if (!confirm(`Remove the category "${name}"?\n\nDesigns in this category will remain, but the filter button will be gone.`)) return;
+  try {
+    const res  = await fetch('/admin/settings/categories/' + encodeURIComponent(name), { method: 'DELETE' });
+    const json = await res.json();
+    if (json.success) {
+      showToast(`Category "${name}" removed.`, 'success');
+      adminCategoriesCache = json.categories;
+      renderCategoryTags(json.categories);
+    }
+  } catch {
+    showToast('Could not delete category.', 'error');
   }
 }
 
@@ -616,9 +813,13 @@ async function openPhotoMoveModal(designId) {
     ).join('');
     return `
       <div class="photo-move-item" id="pmi-${designId}-${i}">
-        ${i === 0 ? '<div class="primary-badge">Main Photo</div>' : ''}
+        ${i === 0 ? '<div class="primary-badge">⭐ Main Photo</div>' : ''}
         <img src="${escHtml(src)}" alt="Photo ${i+1}" onerror="this.style.opacity='0.3'">
         <div class="photo-move-item-actions">
+          ${i > 0 ? `<button onclick="setMainPhoto('${escAttr(designId)}', ${i})"
+            style="margin-bottom:6px;background:rgba(74,171,181,0.1);border-color:var(--turquoise);color:var(--turquoise-dark);">
+            ⭐ Set as Main
+          </button>` : ''}
           <select id="pmsel-${designId}-${i}">
             <option value="">— Move to design… —</option>
             ${opts}
@@ -669,4 +870,128 @@ async function movePhoto(sourceId, imageIndex) {
   } catch {
     showToast('Could not move photo.', 'error');
   }
+}
+
+// ── Set Main Photo ────────────────────────────────────────
+async function setMainPhoto(designId, imageIndex) {
+  try {
+    const res = await fetch(`/admin/designs/${designId}/set-main-image`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageIndex })
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast('Main photo updated!', 'success');
+      closePhotoMoveModal();
+      setTimeout(() => openPhotoMoveModal(designId), 400);
+    } else {
+      showToast(json.error || 'Could not set main photo.', 'error');
+    }
+  } catch {
+    showToast('Could not set main photo.', 'error');
+  }
+}
+
+// ── Hero Photos Picker ────────────────────────────────────
+let heroSelectedPhotos = [];
+
+async function loadHeroPhotoPicker() {
+  const picker = document.getElementById('heroPhotoPicker');
+  if (!picker) return;
+
+  // Load current hero photos from settings
+  try {
+    const sr = await fetch('/api/settings');
+    const s  = await sr.json();
+    heroSelectedPhotos = Array.isArray(s.heroPhotos) ? [...s.heroPhotos] : [];
+  } catch { heroSelectedPhotos = []; }
+
+  // Update preview slots
+  updateHeroPreview();
+
+  // Load all design photos for picker
+  try {
+    const dr = await fetch('/admin/designs');
+    const ds = await dr.json();
+    const allPhotos = [];
+    ds.forEach(d => {
+      const imgs = d.images && d.images.length > 0 ? d.images : (d.image ? [d.image] : []);
+      imgs.forEach(url => { if (url && !allPhotos.includes(url)) allPhotos.push(url); });
+    });
+
+    if (allPhotos.length === 0) {
+      picker.innerHTML = '<div style="grid-column:1/-1;color:var(--text-light);text-align:center;padding:20px;">No design photos uploaded yet.</div>';
+      return;
+    }
+
+    picker.innerHTML = allPhotos.map(url => {
+      const sel = heroSelectedPhotos.includes(url);
+      const ord = heroSelectedPhotos.indexOf(url) + 1;
+      return `
+        <div class="hero-pick-item ${sel ? 'selected' : ''}" id="hpi-${btoa(url).replace(/=/g,'')}"
+          onclick="toggleHeroPhoto('${escAttr(url)}')">
+          <img src="${escHtml(url)}" alt="Design photo" loading="lazy" onerror="this.parentElement.style.display='none'">
+          ${sel ? `<div class="pick-order">${ord}</div>` : ''}
+        </div>`;
+    }).join('');
+  } catch {
+    picker.innerHTML = '<div style="grid-column:1/-1;color:#dc2626;text-align:center;padding:20px;">Could not load photos.</div>';
+  }
+}
+
+function toggleHeroPhoto(url) {
+  const idx = heroSelectedPhotos.indexOf(url);
+  if (idx > -1) {
+    heroSelectedPhotos.splice(idx, 1);
+  } else {
+    if (heroSelectedPhotos.length >= 4) {
+      showToast('Maximum 4 hero photos. Deselect one first.', 'error');
+      return;
+    }
+    heroSelectedPhotos.push(url);
+  }
+  updateHeroPreview();
+  // Update item styling
+  loadHeroPhotoPicker();
+}
+
+function updateHeroPreview() {
+  const labels = ['Left 1', 'Left 2', 'Right 1', 'Right 2'];
+  for (let i = 0; i < 4; i++) {
+    const slot = document.getElementById('heroSlot' + i);
+    if (!slot) continue;
+    const url = heroSelectedPhotos[i];
+    if (url) {
+      slot.innerHTML = `<img src="${escHtml(url)}" alt="Hero photo ${i+1}"><div class="slot-label">${labels[i]}</div>`;
+      slot.classList.remove('empty');
+    } else {
+      slot.innerHTML = `<span>${i+1}</span>`;
+      slot.classList.add('empty');
+    }
+  }
+}
+
+async function saveHeroPhotos() {
+  const btn    = document.getElementById('heroSaveBtn');
+  const status = document.getElementById('heroSaveStatus');
+  if (btn) { btn.disabled = true; btn.textContent = 'Saving…'; }
+  if (status) status.textContent = '';
+  try {
+    const res  = await fetch('/admin/settings/hero-photos', {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ photos: heroSelectedPhotos })
+    });
+    const json = await res.json();
+    if (json.success) {
+      showToast('Hero photos saved!', 'success');
+      if (status) status.textContent = `${heroSelectedPhotos.length} photo${heroSelectedPhotos.length !== 1 ? 's' : ''} saved ✓`;
+    } else {
+      showToast(json.error || 'Could not save.', 'error');
+    }
+  } catch {
+    showToast('Could not save hero photos.', 'error');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Save Hero Photos'; }
 }

@@ -253,19 +253,26 @@
 
       // ── Load hero side photos ────────────────────────
       try {
-        const res  = await fetch('/api/designs');
-        const all  = await res.json();
-        const srcs = all
-          .map(d => d.image || (d.images && d.images[0]) || '')
-          .filter(Boolean);
+        // First try to use admin-chosen hero photos from settings
+        const sr   = await fetch('/api/settings');
+        const s    = await sr.json();
+        let srcs   = [];
+        if (s.heroPhotos && s.heroPhotos.length > 0) {
+          srcs = s.heroPhotos.filter(Boolean);
+        } else {
+          // Fall back: use first images of newest designs
+          const dr = await fetch('/api/designs');
+          const ds = await dr.json();
+          srcs = ds.map(d => d.image || (d.images && d.images[0]) || '').filter(Boolean);
+        }
         const leftEl  = document.getElementById('heroPhotosLeft');
         const rightEl = document.getElementById('heroPhotosRight');
-        if (leftEl && srcs.length >= 2) {
+        if (leftEl && srcs.length >= 1) {
           leftEl.innerHTML = srcs.slice(0, 2).map(s =>
             `<img class="hero-photo-item" src="${s}" alt="Design photo" loading="lazy" onerror="this.style.display='none'">`
           ).join('');
         }
-        if (rightEl && srcs.length >= 4) {
+        if (rightEl && srcs.length >= 3) {
           rightEl.innerHTML = srcs.slice(2, 4).map(s =>
             `<img class="hero-photo-item" src="${s}" alt="Design photo" loading="lazy" onerror="this.style.display='none'">`
           ).join('');

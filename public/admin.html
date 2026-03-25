@@ -509,15 +509,11 @@
       border-radius: var(--radius);
     }
     .price-edit-row.open { display: flex; }
-    .price-edit-row input {
-      flex: 1;
-      padding: 7px 12px;
-      border: 1px solid var(--border);
-      border-radius: 6px;
+    .price-edit-row .price-input-wrap { flex: 1; }
+    .price-edit-row .price-input-wrap input {
+      padding: 5px 4px;
       font-family: 'Lato', sans-serif;
       font-size: 0.88rem;
-      background: white;
-      color: var(--text);
     }
     .price-edit-row .btn-save-price {
       padding: 7px 16px;
@@ -543,11 +539,224 @@
       cursor: pointer;
     }
 
+    /* ── Inline design edit row ───────────────────────────── */
+    .design-edit-row {
+      display: none;
+      width: 100%;
+      padding: 16px 16px 12px;
+      background: var(--sand);
+      border-radius: var(--radius);
+      margin-top: 10px;
+      gap: 14px;
+      flex-direction: column;
+    }
+    .design-edit-row.open { display: flex; }
+    .design-edit-row .edit-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .design-edit-row .edit-fields .full { grid-column: 1 / -1; }
+    .design-edit-row input,
+    .design-edit-row textarea,
+    .design-edit-row select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.88rem;
+      background: white;
+      color: var(--text);
+    }
+    .design-edit-row textarea { resize: vertical; min-height: 80px; }
+    .design-edit-row label { font-size: 0.8rem; font-weight: 700; color: var(--text-mid); display: block; margin-bottom: 4px; }
+    .design-edit-actions { display: flex; gap: 8px; }
+    .btn-save-edit {
+      padding: 7px 20px;
+      background: var(--turquoise);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-save-edit:hover { background: var(--turquoise-dark); }
+    .btn-cancel-edit {
+      padding: 7px 14px;
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.82rem;
+      color: var(--text-mid);
+      cursor: pointer;
+    }
+
+    /* ── Price input with $ USD wrapper ──────────────────── */
+    .price-input-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 0 10px;
+    }
+    .price-input-wrap input {
+      border: none !important;
+      background: transparent !important;
+      padding: 7px 4px !important;
+      flex: 1;
+      min-width: 0;
+    }
+    .price-input-wrap input:focus { outline: none; }
+    .price-input-wrap span { color: var(--text-mid); font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
+
+    /* ── Categories manager ───────────────────────────────── */
+    .cat-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--sand-dark);
+      border: 1px solid var(--border);
+      border-radius: 50px;
+      padding: 5px 14px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .cat-tag-del {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #dc2626;
+      font-size: 1rem;
+      line-height: 1;
+      padding: 0;
+      display: flex;
+      align-items: center;
+    }
+    .cat-tag-del:hover { color: #b91c1c; }
+    .cat-add-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .cat-add-row input {
+      flex: 1;
+      padding: 8px 14px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.88rem;
+      background: white;
+      color: var(--text);
+    }
+    .cat-add-row button {
+      padding: 8px 20px;
+      background: var(--turquoise);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .cat-add-row button:hover { background: var(--turquoise-dark); }
+    #categoriesTags { display: flex; flex-wrap: wrap; gap: 8px; min-height: 38px; }
+
+    /* ── Hero photo picker ────────────────────────────────── */
+    .hero-photo-picker-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+      gap: 10px;
+      max-height: 340px;
+      overflow-y: auto;
+      padding: 4px 2px;
+    }
+    .hero-pick-item {
+      position: relative;
+      border: 3px solid transparent;
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .hero-pick-item img {
+      width: 100%; height: 100px;
+      object-fit: cover;
+      display: block;
+    }
+    .hero-pick-item.selected {
+      border-color: var(--turquoise);
+    }
+    .hero-pick-item .pick-badge {
+      position: absolute;
+      top: 4px; right: 4px;
+      background: var(--turquoise);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 50px;
+    }
+    .hero-pick-item .pick-order {
+      position: absolute;
+      top: 4px; left: 4px;
+      background: var(--text);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 50px;
+    }
+    .hero-selected-preview {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .hero-preview-slot {
+      width: 80px; height: 96px;
+      border-radius: 10px;
+      background: var(--sand-dark);
+      border: 2px dashed var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+      flex-shrink: 0;
+    }
+    .hero-preview-slot img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .hero-preview-slot .slot-label {
+      position: absolute;
+      bottom: 3px; left: 0; right: 0;
+      text-align: center;
+      font-size: 0.6rem;
+      font-weight: 700;
+      background: rgba(0,0,0,0.5);
+      color: white;
+      padding: 2px 0;
+    }
+    .hero-preview-slot.empty { color: var(--text-light); font-size: 1.4rem; }
+
     @media (max-width: 768px) {
       .upload-fields { grid-template-columns: 1fr; }
       .upload-fields .form-group:last-child { grid-column: auto; }
       .admin-design-item { flex-wrap: wrap; }
       .login-card { padding: 36px 24px; }
+      .design-edit-row .edit-fields { grid-template-columns: 1fr; }
+      .design-edit-row .edit-fields .full { grid-column: auto; }
     }
   </style>
 </head>
@@ -650,8 +859,13 @@
                 </select>
               </div>
               <div class="form-group" style="grid-column:1/-1;">
-                <label>Price <span style="font-weight:400;color:var(--text-mid);font-size:0.82rem;">(default $45 USD — adjust as needed)</span></label>
-                <input type="text" name="price" id="uploadPrice" placeholder="e.g. $45 USD" value="$45 USD">
+                <label>Price in USD <span style="font-weight:400;color:var(--text-mid);font-size:0.82rem;">(default 45 — enter amount only)</span></label>
+                <div class="price-input-wrap">
+                  <span>$</span>
+                  <input type="number" id="uploadPriceAmount" placeholder="45" min="0" step="1" value="45" style="border:none;background:transparent;">
+                  <span>USD</span>
+                </div>
+                <input type="hidden" name="price" id="uploadPrice" value="$45 USD">
               </div>
               <div class="form-group" style="grid-column:1/-1;">
                 <label>Description</label>
@@ -673,6 +887,25 @@
               Upload Design
             </button>
           </form>
+        </div>
+
+        <!-- Categories Manager -->
+        <div class="upload-card" id="categoriesCard" style="margin-bottom:36px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <h3 style="margin:0;">Filter Categories</h3>
+            <span style="font-size:0.82rem;color:var(--text-mid);">Shown as shortcuts on the Designs page</span>
+          </div>
+          <p style="color:var(--text-mid);font-size:0.88rem;margin-bottom:20px;">
+            Each design is assigned to one category. These categories appear as filter buttons visitors can click to browse.
+          </p>
+          <div id="categoriesTags">
+            <span style="color:var(--text-light);font-size:0.85rem;">Loading…</span>
+          </div>
+          <div class="cat-add-row">
+            <input type="text" id="newCategoryInput" placeholder="New category name (e.g. Tote Bags)"
+              onkeydown="if(event.key==='Enter'){event.preventDefault();addCategory();}">
+            <button onclick="addCategory()">+ Add</button>
+          </div>
         </div>
 
         <!-- Designs List -->
@@ -728,6 +961,30 @@
             <button type="submit" class="btn btn-primary" id="aboutPhotoUploadBtn">Upload Photo</button>
             <button type="button" onclick="clearAboutPhotoInput()" style="background:none;border:none;color:var(--text-mid);font-family:'Lato',sans-serif;font-size:0.85rem;cursor:pointer;margin-left:12px;" id="aboutPhotoClearBtn" style="display:none;">Cancel</button>
           </form>
+        </div>
+
+        <!-- Hero Banner Photos -->
+        <div class="about-photo-section">
+          <h3 style="margin-bottom:6px;">🌊 Hero Photos — "Where the Ocean Inspires Every Stitch"</h3>
+          <p style="color:var(--text-mid);font-size:0.9rem;margin-bottom:20px;">
+            Choose up to 4 photos to display in the two side columns on the homepage banner. The first 2 appear on the left, the last 2 on the right.
+          </p>
+          <div class="hero-selected-preview" id="heroSelectedPreview">
+            <div class="hero-preview-slot empty" id="heroSlot0"><span>1</span></div>
+            <div class="hero-preview-slot empty" id="heroSlot1"><span>2</span></div>
+            <div class="hero-preview-slot empty" id="heroSlot2"><span>3</span></div>
+            <div class="hero-preview-slot empty" id="heroSlot3"><span>4</span></div>
+          </div>
+          <p style="font-size:0.85rem;font-weight:700;color:var(--text);margin-bottom:10px;">
+            Click photos to select (max 4) — click again to deselect:
+          </p>
+          <div class="hero-photo-picker-grid" id="heroPhotoPicker">
+            <div style="grid-column:1/-1;color:var(--text-light);text-align:center;padding:20px;">Loading…</div>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:12px;align-items:center;">
+            <button class="btn btn-primary btn-sm" onclick="saveHeroPhotos()" id="heroSaveBtn">Save Hero Photos</button>
+            <span id="heroSaveStatus" style="font-size:0.85rem;color:var(--text-mid);"></span>
+          </div>
         </div>
 
         <!-- Homepage Workshop Photo -->

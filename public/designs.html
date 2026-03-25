@@ -151,17 +151,24 @@
     document.addEventListener('DOMContentLoaded', async () => {
       const grid = document.getElementById('designsGrid');
       try {
-        const res = await fetch('/api/designs');
-        allDesigns = await res.json();
-        buildFilters(allDesigns);
+        const [designsRes, catsRes] = await Promise.all([
+          fetch('/api/designs'),
+          fetch('/api/categories')
+        ]);
+        allDesigns = await designsRes.json();
+        const managedCats = await catsRes.json();
+        buildFilters(allDesigns, managedCats);
         renderDesigns(allDesigns);
       } catch {
         grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-mid);padding:40px">Unable to load designs.</p>';
       }
     });
 
-    function buildFilters(designs) {
-      const cats = [...new Set(designs.map(d => d.category))].filter(Boolean);
+    function buildFilters(designs, managedCats) {
+      // Use managed categories if available, otherwise derive from designs
+      let cats = (managedCats && managedCats.length > 0)
+        ? managedCats
+        : [...new Set(designs.map(d => d.category))].filter(Boolean);
       const bar = document.getElementById('filterBar');
       cats.forEach(cat => {
         const btn = document.createElement('button');
