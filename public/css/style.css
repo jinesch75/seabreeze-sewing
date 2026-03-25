@@ -172,6 +172,11 @@ ul { list-style: none; }
   font-family: 'Lato', sans-serif;
   font-weight: 400;
 }
+.nav-logo-img {
+  height: 46px;
+  width: auto;
+  display: block;
+}
 .nav-links {
   display: flex;
   align-items: center;

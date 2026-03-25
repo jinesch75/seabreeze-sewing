@@ -13,15 +13,7 @@
   <nav class="nav scrolled" id="mainNav">
     <div class="container nav-inner">
       <a href="/" class="nav-logo">
-        <div class="nav-logo-icon">
-          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2C9 2 7 4 7 7c0 1.5.5 2.8 1.4 3.8L3 17h3l1-2h10l1 2h3l-5.4-6.2C15.5 9.8 16 8.5 16 7c0-3-2-5-4-5zm0 2c1.1 0 2 1.3 2 3s-.9 3-2 3-2-1.3-2-3 .9-3 2-3z"/>
-          </svg>
-        </div>
-        <div>
-          <div class="nav-logo-text">Sea <span>Breeze</span> Sewing</div>
-          <div class="nav-logo-sub">Bermuda · Handcrafted</div>
-        </div>
+        <img src="/images/logo.svg" alt="Sea Breeze Sewing BDA" class="nav-logo-img">
       </a>
       <ul class="nav-links" id="navLinks">
         <li><a href="/">Home</a></li>
@@ -63,7 +55,15 @@
               <div>
                 <h4>Email</h4>
                 <p>Martine Brosius-Rothwell</p>
-                <p><a href="mailto:martinebrosius@hotmail.com">martinebrosius@hotmail.com</a></p>
+                <p><a href="mailto:brosiusjacques@hotmail.com">brosiusjacques@hotmail.com</a></p>
+              </div>
+            </div>
+            <div class="contact-detail">
+              <div class="contact-detail-icon">📞</div>
+              <div>
+                <h4>Phone</h4>
+                <p>Martine Brosius-Rothwell</p>
+                <p><a href="tel:+14412974463">001 (441) 297-4463</a></p>
               </div>
             </div>
             <div class="contact-detail">
@@ -109,13 +109,19 @@
               <label>Phone Number (optional)</label>
               <input type="tel" name="phone" id="phone" placeholder="+1 441 000 0000">
             </div>
+            <!-- Design Carousel Selector -->
             <div class="form-group">
               <label>Which Design Are You Interested In?</label>
-              <select name="item" id="item">
-                <option value="">— General Inquiry —</option>
-                <option value="Custom Order">Custom Order</option>
-                <!-- Designs loaded dynamically -->
-              </select>
+              <input type="hidden" name="item" id="item" value="">
+              <div class="design-carousel-wrap">
+                <button type="button" class="carousel-arrow carousel-prev" id="carouselPrev" onclick="carouselScroll(-1)" aria-label="Previous">&#8249;</button>
+                <div class="design-carousel" id="designCarousel">
+                  <!-- Cards loaded dynamically -->
+                  <div class="carousel-loading">Loading designs…</div>
+                </div>
+                <button type="button" class="carousel-arrow carousel-next" id="carouselNext" onclick="carouselScroll(1)" aria-label="Next">&#8250;</button>
+              </div>
+              <div id="selectedDesignLabel" style="margin-top:8px;font-size:0.85rem;color:var(--turquoise-dark);font-weight:700;min-height:20px;"></div>
             </div>
             <div class="form-group">
               <label>Your Message *</label>
@@ -144,17 +150,7 @@
     <div class="container">
       <div class="footer-grid">
         <div class="footer-brand">
-          <div class="nav-logo">
-            <div class="nav-logo-icon">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 2C9 2 7 4 7 7c0 1.5.5 2.8 1.4 3.8L3 17h3l1-2h10l1 2h3l-5.4-6.2C15.5 9.8 16 8.5 16 7c0-3-2-5-4-5zm0 2c1.1 0 2 1.3 2 3s-.9 3-2 3-2-1.3-2-3 .9-3 2-3z"/>
-              </svg>
-            </div>
-            <div>
-              <div class="nav-logo-text">Sea <span>Breeze</span> Sewing</div>
-              <div class="nav-logo-sub">Bermuda · Handcrafted</div>
-            </div>
-          </div>
+          <img src="/images/logo.svg" alt="Sea Breeze Sewing BDA" class="nav-logo-img" style="margin-bottom:12px;">
           <p>Handcrafted clothing lovingly made in our Bermudian workshop.</p>
         </div>
         <div class="footer-col">
@@ -170,7 +166,8 @@
           <h4>Contact</h4>
           <ul>
             <li>Martine Brosius-Rothwell</li>
-            <li><a href="mailto:martinebrosius@hotmail.com">martinebrosius@hotmail.com</a></li>
+            <li><a href="mailto:brosiusjacques@hotmail.com">brosiusjacques@hotmail.com</a></li>
+            <li><a href="tel:+14412974463">001 (441) 297-4463</a></li>
             <li>Bermuda</li>
           </ul>
         </div>
@@ -183,37 +180,155 @@
   </footer>
 
   <div class="toast" id="toast"></div>
+  <style>
+    /* ── Design Carousel for Contact Form ──────────────── */
+    .design-carousel-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .design-carousel {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      scroll-behavior: smooth;
+      padding: 6px 2px 10px;
+      flex: 1;
+      scrollbar-width: none;
+    }
+    .design-carousel::-webkit-scrollbar { display: none; }
+    .carousel-loading {
+      padding: 20px;
+      color: var(--text-mid);
+      font-size: 0.9rem;
+    }
+    .carousel-card {
+      flex-shrink: 0;
+      width: 100px;
+      cursor: pointer;
+      border-radius: var(--radius);
+      border: 2px solid var(--border);
+      overflow: hidden;
+      transition: var(--transition);
+      background: white;
+    }
+    .carousel-card:hover {
+      border-color: var(--turquoise-light);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+    .carousel-card.selected {
+      border-color: var(--turquoise);
+      box-shadow: 0 0 0 3px rgba(74,171,181,0.2);
+    }
+    .carousel-card.general-inquiry {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100px;
+      background: var(--sand);
+    }
+    .carousel-card img {
+      width: 100%;
+      height: 80px;
+      object-fit: cover;
+      display: block;
+    }
+    .carousel-card-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      color: var(--text);
+      padding: 4px 6px;
+      line-height: 1.3;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .carousel-arrow {
+      flex-shrink: 0;
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: white;
+      font-size: 1.3rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--text-mid);
+      transition: var(--transition);
+      box-shadow: 0 2px 6px var(--shadow);
+    }
+    .carousel-arrow:hover {
+      background: var(--turquoise);
+      color: white;
+      border-color: var(--turquoise);
+    }
+  </style>
+
   <script src="/js/main.js"></script>
   <script>
-    // Pre-populate item select from designs API
-    async function loadDesignOptions() {
+    // ── Design Carousel ────────────────────────────────────
+    let carouselDesigns = [];
+
+    async function loadCarousel() {
+      const carousel = document.getElementById('designCarousel');
       try {
         const res = await fetch('/api/designs');
-        const designs = await res.json();
-        const select = document.getElementById('item');
-        designs.forEach(d => {
-          const opt = document.createElement('option');
-          opt.value = d.title;
-          opt.textContent = d.title;
-          select.appendChild(opt);
-        });
-      } catch {}
-    }
-    loadDesignOptions();
+        carouselDesigns = await res.json();
 
-    // Pre-fill from URL param
-    const params = new URLSearchParams(window.location.search);
-    const itemParam = params.get('item');
-    if (itemParam) {
-      document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-          const sel = document.getElementById('item');
-          for (let o of sel.options) {
-            if (o.value === itemParam) { o.selected = true; break; }
+        let html = `
+          <div class="carousel-card general-inquiry selected" data-value="" onclick="selectCarouselCard(this, '')">
+            <span style="font-size:1.4rem">✉️</span>
+            <div class="carousel-card-label" style="white-space:normal;padding:4px 8px;font-size:0.7rem;">General Inquiry</div>
+          </div>
+          <div class="carousel-card general-inquiry" data-value="Custom Order" onclick="selectCarouselCard(this, 'Custom Order')">
+            <span style="font-size:1.4rem">✂️</span>
+            <div class="carousel-card-label" style="white-space:normal;padding:4px 8px;font-size:0.7rem;">Custom Order</div>
+          </div>`;
+
+        carouselDesigns.forEach(d => {
+          const img = d.image || (d.images && d.images[0]) || '';
+          html += `
+            <div class="carousel-card" data-value="${escHtml(d.title)}" onclick="selectCarouselCard(this, '${escAttr(d.title)}')">
+              ${img ? `<img src="${escHtml(img)}" alt="${escHtml(d.title)}" loading="lazy" onerror="this.style.display='none'">` : '<div style="height:80px;background:var(--sand-dark);"></div>'}
+              <div class="carousel-card-label" title="${escHtml(d.title)}">${escHtml(d.title)}</div>
+            </div>`;
+        });
+
+        carousel.innerHTML = html;
+
+        // Pre-fill from URL param
+        const params = new URLSearchParams(window.location.search);
+        const itemParam = params.get('item');
+        if (itemParam) {
+          const match = carousel.querySelector(`[data-value="${CSS.escape(itemParam)}"]`);
+          if (match) {
+            selectCarouselCard(match, itemParam);
+            match.scrollIntoView({ inline: 'center', behavior: 'smooth' });
           }
-        }, 500);
-      });
+        }
+      } catch {
+        carousel.innerHTML = '<div class="carousel-loading">Could not load designs.</div>';
+      }
     }
+
+    function selectCarouselCard(el, value) {
+      document.querySelectorAll('.carousel-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      document.getElementById('item').value = value;
+      const label = document.getElementById('selectedDesignLabel');
+      label.textContent = value ? '✓ Selected: ' + value : '✓ General Inquiry selected';
+    }
+
+    function carouselScroll(dir) {
+      const c = document.getElementById('designCarousel');
+      c.scrollBy({ left: dir * 260, behavior: 'smooth' });
+    }
+
+    loadCarousel();
 
     // Contact form submit
     document.getElementById('contactForm').addEventListener('submit', async (e) => {
@@ -225,7 +340,7 @@
         name:    document.getElementById('name').value,
         email:   document.getElementById('email').value,
         phone:   document.getElementById('phone').value,
-        item:    document.getElementById('item').value,
+        item:    document.getElementById('item').value || 'General Inquiry',
         message: document.getElementById('message').value
       };
       try {

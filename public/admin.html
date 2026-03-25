@@ -45,6 +45,120 @@
       display: none;
     }
 
+    /* ── About Photo Section ──────────────────────────── */
+    .about-photo-section {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      box-shadow: 0 4px 20px var(--shadow);
+      margin-bottom: 36px;
+    }
+    .about-photo-current {
+      display: flex;
+      align-items: flex-start;
+      gap: 28px;
+      padding: 20px;
+      background: var(--sand);
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+    }
+    .about-photo-preview {
+      width: 120px; height: 120px;
+      border-radius: var(--radius);
+      object-fit: cover;
+      border: 2px solid var(--border);
+      background: var(--sand-dark);
+      flex-shrink: 0;
+    }
+    .about-photo-placeholder {
+      width: 120px; height: 120px;
+      border-radius: var(--radius);
+      border: 2px dashed var(--border);
+      background: var(--sand-dark);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 2rem;
+      color: var(--text-light);
+    }
+
+    /* ── Photo Move Modal ─────────────────────────────── */
+    .photo-move-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .photo-move-overlay.open { display: flex; }
+    .photo-move-modal {
+      background: white;
+      border-radius: var(--radius-lg);
+      padding: 36px;
+      width: 100%;
+      max-width: 720px;
+      max-height: 85vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .photo-move-modal h3 { margin-bottom: 6px; }
+    .photo-move-modal .subtitle { color: var(--text-mid); font-size: 0.9rem; margin-bottom: 24px; }
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .photo-move-item {
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      background: var(--sand);
+    }
+    .photo-move-item img {
+      width: 100%; height: 120px;
+      object-fit: cover;
+      display: block;
+    }
+    .photo-move-item-actions {
+      padding: 8px;
+    }
+    .photo-move-item-actions select {
+      width: 100%;
+      font-size: 0.75rem;
+      padding: 5px 8px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      background: white;
+      color: var(--text);
+    }
+    .photo-move-item-actions button {
+      width: 100%;
+      padding: 5px;
+      font-size: 0.75rem;
+      font-family: 'Lato', sans-serif;
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: 6px;
+      border: 1px solid var(--turquoise);
+      background: var(--turquoise);
+      color: white;
+      transition: var(--transition);
+    }
+    .photo-move-item-actions button:hover { background: var(--turquoise-dark); }
+    .photo-move-item .primary-badge {
+      background: var(--turquoise);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      text-align: center;
+    }
+
     /* ── Admin Shell ──────────────────────────────────── */
     .admin-shell { display: none; min-height: 100vh; }
 
@@ -421,15 +535,7 @@
       <div class="admin-topbar-inner">
         <div style="display:flex;align-items:center;gap:14px;">
           <a href="/" class="nav-logo" style="text-decoration:none;">
-            <div class="nav-logo-icon" style="width:32px;height:32px;">
-              <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:18px;height:18px;">
-                <path d="M12 2C9 2 7 4 7 7c0 1.5.5 2.8 1.4 3.8L3 17h3l1-2h10l1 2h3l-5.4-6.2C15.5 9.8 16 8.5 16 7c0-3-2-5-4-5zm0 2c1.1 0 2 1.3 2 3s-.9 3-2 3-2-1.3-2-3 .9-3 2-3z"/>
-              </svg>
-            </div>
-            <div>
-              <div class="nav-logo-text">Sea <span>Breeze</span> Sewing</div>
-              <div class="nav-logo-sub">Bermuda · Handcrafted</div>
-            </div>
+            <img src="/images/logo-white.svg" alt="Sea Breeze Sewing BDA" class="nav-logo-img">
           </a>
           <span class="admin-badge">Admin</span>
         </div>
@@ -449,6 +555,9 @@
         </button>
         <button class="admin-tab" onclick="switchTab('inquiries')">
           ✉️ Inquiries <span id="inquiriesCount" class="tab-badge" style="display:none;"></span>
+        </button>
+        <button class="admin-tab" onclick="switchTab('about')">
+          🖼 About Page
         </button>
       </div>
 
@@ -496,8 +605,8 @@
                 </select>
               </div>
               <div class="form-group" style="grid-column:1/-1;">
-                <label>Price <span style="font-weight:400;color:var(--text-mid);font-size:0.82rem;">(optional — e.g. $120 BMD)</span></label>
-                <input type="text" name="price" id="uploadPrice" placeholder="e.g. $120 BMD">
+                <label>Price <span style="font-weight:400;color:var(--text-mid);font-size:0.82rem;">(default $45 USD — adjust as needed)</span></label>
+                <input type="text" name="price" id="uploadPrice" placeholder="e.g. $45 USD" value="$45 USD">
               </div>
               <div class="form-group" style="grid-column:1/-1;">
                 <label>Description</label>
@@ -541,6 +650,64 @@
         </div>
       </div>
 
+      <!-- ── About Page Tab ────────────────────────────── -->
+      <div class="tab-panel" id="tab-about">
+        <div class="about-photo-section">
+          <h3 style="margin-bottom:6px;">Profile / About Photo</h3>
+          <p style="color:var(--text-mid);font-size:0.9rem;margin-bottom:24px;">
+            This photo appears on the About page alongside your story. Upload a portrait or workshop photo.
+          </p>
+
+          <!-- Current photo preview -->
+          <div class="about-photo-current" id="aboutPhotoCurrentWrap">
+            <div class="about-photo-placeholder" id="aboutPhotoPlaceholder">🌊</div>
+            <img id="aboutPhotoImg" class="about-photo-preview" src="" alt="Profile photo" style="display:none;">
+            <div style="flex:1;">
+              <div id="aboutPhotoStatus" style="font-weight:700;margin-bottom:8px;">No photo uploaded yet</div>
+              <p style="font-size:0.85rem;color:var(--text-mid);margin-bottom:16px;">Upload a portrait or workshop photo to personalise your About page.</p>
+              <button id="aboutPhotoDeleteBtn" class="btn-sm-outline btn-sm-delete" onclick="deleteAboutPhoto()" style="display:none;">Remove Photo</button>
+            </div>
+          </div>
+
+          <!-- Upload new photo -->
+          <form id="aboutPhotoForm" enctype="multipart/form-data">
+            <div class="image-drop-zone" id="aboutDropZone" style="margin-bottom:16px;">
+              <input type="file" id="aboutPhotoInput" name="photo" accept="image/*"
+                onchange="previewAboutPhoto(this)">
+              <div id="aboutDropContent">
+                <div class="drop-icon">📷</div>
+                <div class="drop-text">Click to choose a photo</div>
+                <div class="drop-hint">JPG, PNG, WebP · up to 10 MB</div>
+              </div>
+              <div id="aboutPhotoNewPreview" style="display:none;text-align:center;">
+                <img id="aboutPhotoNewImg" src="" alt="New photo" style="max-height:180px;border-radius:var(--radius);margin:0 auto;">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary" id="aboutPhotoUploadBtn">
+              Upload Photo
+            </button>
+            <button type="button" onclick="clearAboutPhotoInput()" style="background:none;border:none;color:var(--text-mid);font-family:'Lato',sans-serif;font-size:0.85rem;cursor:pointer;margin-left:12px;" id="aboutPhotoClearBtn" style="display:none;">
+              Cancel
+            </button>
+          </form>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Photo Move Modal ──────────────────────────────── -->
+  <div class="photo-move-overlay" id="photoMoveOverlay">
+    <div class="photo-move-modal">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;">
+        <div>
+          <h3 id="photoMoveTitle">Reorganise Photos</h3>
+          <div class="subtitle" id="photoMoveSubtitle">Move photos to different designs using the dropdowns below.</div>
+        </div>
+        <button onclick="closePhotoMoveModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:var(--text-mid);padding:4px;">✕</button>
+      </div>
+      <div class="photo-grid" id="photoMoveGrid"></div>
+      <button class="btn btn-outline" onclick="closePhotoMoveModal()" style="width:100%;">Done</button>
     </div>
   </div>
 

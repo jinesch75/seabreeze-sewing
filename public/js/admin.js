@@ -63,10 +63,15 @@ function showAdminShell() {
 function switchTab(tab) {
   activeTab = tab;
   document.querySelectorAll('.admin-tab').forEach((t, i) => {
-    t.classList.toggle('active', (i === 0 && tab === 'designs') || (i === 1 && tab === 'inquiries'));
+    t.classList.toggle('active',
+      (i === 0 && tab === 'designs') ||
+      (i === 1 && tab === 'inquiries') ||
+      (i === 2 && tab === 'about')
+    );
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + tab)?.classList.add('active');
+  if (tab === 'about') loadAboutSettings();
 }
 
 // ── Multi-image preview ───────────────────────────────────
@@ -226,6 +231,12 @@ async function loadDesigns() {
         </div>
         <div class="admin-design-actions">
           <button class="btn-icon btn-icon-toggle"
+            title="Reorganise photos"
+            onclick="openPhotoMoveModal('${d.id}')"
+            style="background:var(--sand);color:var(--turquoise-dark);font-size:0.8rem;width:auto;border-radius:8px;padding:0 10px;font-weight:700;font-family:'Lato',sans-serif;">
+            📂 Photos
+          </button>
+          <button class="btn-icon btn-icon-toggle"
             title="${d.featured ? 'Unfeature' : 'Feature on homepage'}"
             onclick="toggleFeatured('${d.id}', ${!d.featured})">
             ${d.featured ? '★' : '☆'}
@@ -344,5 +355,167 @@ async function deleteContact(id) {
     loadContacts();
   } catch {
     showToast('Could not delete inquiry.', 'error');
+  }
+}
+
+// ── About Page Photo ──────────────────────────────────────
+async function loadAboutSettings() {
+  try {
+    const res  = await fetch('/admin/settings');
+    const s    = await res.json();
+    const img  = document.getElementById('aboutPhotoImg');
+    const ph   = document.getElementById('aboutPhotoPlaceholder');
+    const stat = document.getElementById('aboutPhotoStatus');
+    const del  = document.getElementById('aboutPhotoDeleteBtn');
+    if (s.aboutPhoto) {
+      img.src = s.aboutPhoto;
+      img.style.display = 'block';
+      ph.style.display  = 'none';
+      stat.textContent  = 'Profile photo uploaded ✓';
+      del.style.display = 'inline-block';
+    } else {
+      img.style.display = 'none';
+      ph.style.display  = 'flex';
+      stat.textContent  = 'No photo uploaded yet';
+      del.style.display = 'none';
+    }
+  } catch {}
+}
+
+function previewAboutPhoto(input) {
+  if (!input.files || input.files.length === 0) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('aboutDropContent').style.display = 'none';
+    const preview = document.getElementById('aboutPhotoNewPreview');
+    preview.style.display = 'block';
+    document.getElementById('aboutPhotoNewImg').src = e.target.result;
+    document.getElementById('aboutPhotoClearBtn').style.display = 'inline';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
+function clearAboutPhotoInput() {
+  document.getElementById('aboutPhotoInput').value = '';
+  document.getElementById('aboutDropContent').style.display = '';
+  document.getElementById('aboutPhotoNewPreview').style.display = 'none';
+  document.getElementById('aboutPhotoClearBtn').style.display = 'none';
+}
+
+document.getElementById('aboutPhotoForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const input = document.getElementById('aboutPhotoInput');
+  if (!input.files || input.files.length === 0) {
+    showToast('Please select a photo first.', 'error');
+    return;
+  }
+  const btn = document.getElementById('aboutPhotoUploadBtn');
+  btn.disabled = true; btn.textContent = 'Uploading…';
+  const fd = new FormData();
+  fd.append('photo', input.files[0]);
+  try {
+    const res  = await fetch('/admin/settings/about-photo', { method: 'POST', body: fd });
+    const json = await res.json();
+    if (json.success) {
+      showToast('Profile photo updated!', 'success');
+      clearAboutPhotoInput();
+      loadAboutSettings();
+    } else {
+      showToast(json.error || 'Upload failed.', 'error');
+    }
+  } catch {
+    showToast('Upload error. Please try again.', 'error');
+  }
+  btn.disabled = false; btn.textContent = 'Upload Photo';
+});
+
+async function deleteAboutPhoto() {
+  if (!confirm('Remove the profile photo?')) return;
+  try {
+    await fetch('/admin/settings/about-photo', { method: 'DELETE' });
+    showToast('Photo removed.', 'success');
+    loadAboutSettings();
+  } catch {
+    showToast('Could not remove photo.', 'error');
+  }
+}
+
+// ── Photo Move Modal ──────────────────────────────────────
+let allDesignsCache = [];
+
+async function openPhotoMoveModal(designId) {
+  // Refresh designs list
+  try {
+    const res = await fetch('/admin/designs');
+    allDesignsCache = await res.json();
+  } catch {
+    showToast('Could not load designs.', 'error');
+    return;
+  }
+
+  const design = allDesignsCache.find(d => d.id === designId);
+  if (!design) return;
+
+  const images = design.images && design.images.length > 0 ? design.images : [design.image];
+  const otherDesigns = allDesignsCache.filter(d => d.id !== designId);
+
+  document.getElementById('photoMoveTitle').textContent = '📂 ' + design.title;
+  document.getElementById('photoMoveSubtitle').textContent =
+    `${images.length} photo${images.length !== 1 ? 's' : ''} — use the dropdowns to move any photo to a different design.`;
+
+  const grid = document.getElementById('photoMoveGrid');
+  grid.innerHTML = images.map((src, i) => {
+    const opts = otherDesigns.map(d =>
+      `<option value="${escHtml(d.id)}">${escHtml(d.title.substring(0,28))}${d.title.length > 28 ? '…' : ''}</option>`
+    ).join('');
+    return `
+      <div class="photo-move-item" id="pmi-${designId}-${i}">
+        ${i === 0 ? '<div class="primary-badge">Main Photo</div>' : ''}
+        <img src="${escHtml(src)}" alt="Photo ${i+1}" onerror="this.style.opacity='0.3'">
+        <div class="photo-move-item-actions">
+          <select id="pmsel-${designId}-${i}">
+            <option value="">— Move to design… —</option>
+            ${opts}
+          </select>
+          <button onclick="movePhoto('${escAttr(designId)}', ${i})">Move Photo</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('photoMoveOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closePhotoMoveModal() {
+  document.getElementById('photoMoveOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+  loadDesigns();
+}
+
+async function movePhoto(sourceId, imageIndex) {
+  const sel = document.getElementById(`pmsel-${sourceId}-${imageIndex}`);
+  const targetId = sel?.value;
+  if (!targetId) {
+    showToast('Please select a target design first.', 'error');
+    return;
+  }
+  try {
+    const res = await fetch(`/admin/designs/${sourceId}/move-image`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ imageIndex, targetDesignId: targetId })
+    });
+    const json = await res.json();
+    if (json.success) {
+      const targetName = allDesignsCache.find(d => d.id === targetId)?.title || targetId;
+      showToast(`Photo moved to "${targetName}"!`, 'success');
+      // Re-open modal for same design with updated photos
+      closePhotoMoveModal();
+      setTimeout(() => openPhotoMoveModal(sourceId), 400);
+    } else {
+      showToast(json.error || 'Move failed.', 'error');
+    }
+  } catch {
+    showToast('Could not move photo.', 'error');
   }
 }

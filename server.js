@@ -19,8 +19,9 @@ const PORT = process.env.PORT || 3000;
 
 // ── Paths ──────────────────────────────────────────────────
 const DATA_DIR    = path.join(__dirname, 'data');
-const DESIGNS_FILE = path.join(DATA_DIR, 'designs.json');
+const DESIGNS_FILE  = path.join(DATA_DIR, 'designs.json');
 const CONTACTS_FILE = path.join(DATA_DIR, 'contacts.json');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const UPLOADS_DIR = path.join(__dirname, 'public', 'images', 'uploads');
 
 // Ensure directories exist
@@ -91,6 +92,16 @@ app.get('/api/designs', (req, res) => {
   res.json(designs);
 });
 
+// GET public settings (about photo, etc.)
+app.get('/api/settings', (req, res) => {
+  const settings = readJSON(SETTINGS_FILE);
+  if (!Array.isArray(settings)) {
+    res.json(settings || {});
+  } else {
+    res.json({});
+  }
+});
+
 // GET featured designs only
 app.get('/api/designs/featured', (req, res) => {
   const designs = readJSON(DESIGNS_FILE);
@@ -146,6 +157,70 @@ app.post('/admin/logout', (req, res) => {
 // GET session status
 app.get('/admin/status', (req, res) => {
   res.json({ isAdmin: !!(req.session && req.session.isAdmin) });
+});
+
+// GET admin settings
+app.get('/admin/settings', requireAdmin, (req, res) => {
+  const s = readJSON(SETTINGS_FILE);
+  res.json((!s || Array.isArray(s)) ? {} : s);
+});
+
+// POST upload about/profile photo
+app.post('/admin/settings/about-photo', requireAdmin, upload.single('photo'), (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No photo uploaded.' });
+  const url = '/images/uploads/' + req.file.filename;
+  let s = readJSON(SETTINGS_FILE);
+  if (!s || Array.isArray(s)) s = {};
+  s.aboutPhoto = url;
+  writeJSON(SETTINGS_FILE, s);
+  res.json({ success: true, url });
+});
+
+// DELETE about photo
+app.delete('/admin/settings/about-photo', requireAdmin, (req, res) => {
+  let s = readJSON(SETTINGS_FILE);
+  if (!s || Array.isArray(s)) s = {};
+  if (s.aboutPhoto && s.aboutPhoto.startsWith('/images/uploads/')) {
+    const fp = path.join(__dirname, 'public', s.aboutPhoto);
+    if (fs.existsSync(fp)) fs.unlinkSync(fp);
+  }
+  s.aboutPhoto = null;
+  writeJSON(SETTINGS_FILE, s);
+  res.json({ success: true });
+});
+
+// PATCH move a single image from one design to another
+app.patch('/admin/designs/:sourceId/move-image', requireAdmin, (req, res) => {
+  const { imageIndex, targetDesignId } = req.body;
+  if (imageIndex === undefined || !targetDesignId) {
+    return res.status(400).json({ error: 'imageIndex and targetDesignId are required.' });
+  }
+  const designs = readJSON(DESIGNS_FILE);
+  const srcIdx = designs.findIndex(d => d.id === req.params.sourceId);
+  const tgtIdx = designs.findIndex(d => d.id === targetDesignId);
+  if (srcIdx === -1) return res.status(404).json({ error: 'Source design not found.' });
+  if (tgtIdx === -1) return res.status(404).json({ error: 'Target design not found.' });
+
+  const srcImages = designs[srcIdx].images || [designs[srcIdx].image];
+  const imgIdx    = parseInt(imageIndex, 10);
+  if (imgIdx < 0 || imgIdx >= srcImages.length) {
+    return res.status(400).json({ error: 'Invalid image index.' });
+  }
+  if (srcImages.length === 1) {
+    return res.status(400).json({ error: 'Cannot move the last image out of a design. Delete the design instead.' });
+  }
+
+  const [movedUrl] = srcImages.splice(imgIdx, 1);
+  designs[srcIdx].images = srcImages;
+  designs[srcIdx].image  = srcImages[0] || '';
+
+  const tgtImages = designs[tgtIdx].images || [designs[tgtIdx].image];
+  tgtImages.push(movedUrl);
+  designs[tgtIdx].images = tgtImages;
+  designs[tgtIdx].image  = tgtImages[0];
+
+  writeJSON(DESIGNS_FILE, designs);
+  res.json({ success: true });
 });
 
 // GET all designs (admin — includes full data)
