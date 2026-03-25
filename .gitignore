@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Uploaded photos (these live on the server — not tracked in git)
+public/images/uploads/
+
+# Data files (contacts & designs managed on server — optional: remove these
+# lines if you DO want to commit your initial designs.json)
+# data/contacts.json
+
+# OS / editor junk
+.DS_Store
+Thumbs.db
+*.log
