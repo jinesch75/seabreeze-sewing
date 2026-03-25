@@ -253,16 +253,16 @@
     .upload-card {
       background: white;
       border-radius: var(--radius-lg);
-      padding: 40px;
+      padding: 24px 28px;
       box-shadow: 0 4px 20px var(--shadow);
       margin-bottom: 36px;
     }
-    .upload-card h3 { font-size: 1.4rem; margin-bottom: 24px; }
+    .upload-card h3 { font-size: 1.1rem; margin-bottom: 14px; }
 
     .image-drop-zone {
       border: 2px dashed var(--border);
       border-radius: var(--radius);
-      padding: 48px 24px;
+      padding: 22px 16px;
       text-align: center;
       cursor: pointer;
       transition: var(--transition);
@@ -282,9 +282,9 @@
       width: 100%;
       height: 100%;
     }
-    .drop-icon { font-size: 2.5rem; margin-bottom: 12px; }
-    .drop-text { font-size: 1rem; color: var(--text); font-weight: 700; margin-bottom: 6px; }
-    .drop-hint { font-size: 0.82rem; color: var(--text-mid); }
+    .drop-icon { font-size: 1.7rem; margin-bottom: 6px; }
+    .drop-text { font-size: 0.88rem; color: var(--text); font-weight: 700; margin-bottom: 4px; }
+    .drop-hint { font-size: 0.76rem; color: var(--text-mid); }
     .image-preview {
       display: none;
       position: relative;
@@ -308,7 +308,7 @@
       font-size: 0.9rem;
     }
 
-    .upload-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 24px; }
+    .upload-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
     .upload-fields .form-group { margin-bottom: 0; }
     .upload-fields .form-group:last-child { grid-column: 1/-1; }
 
@@ -553,7 +553,7 @@
     .design-edit-row.open { display: flex; }
     .design-edit-row .edit-fields {
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 12px;
     }
     .design-edit-row .edit-fields .full { grid-column: 1 / -1; }
@@ -756,7 +756,7 @@
       .admin-design-item { flex-wrap: wrap; }
       .login-card { padding: 36px 24px; }
       .design-edit-row .edit-fields { grid-template-columns: 1fr; }
-      .design-edit-row .edit-fields .full { grid-column: auto; }
+      .design-edit-row .edit-fields .full { grid-column: 1 / -1; }
     }
   </style>
 </head>
@@ -845,7 +845,7 @@
             <div class="upload-fields">
               <div class="form-group" style="grid-column:1/-1;">
                 <label>Design Title *</label>
-                <input type="text" name="title" id="uploadTitle" placeholder="e.g. Turquoise Linen Dress" required>
+                <input type="text" name="title" id="uploadTitle" placeholder="Input the title you want to give to the design" required>
               </div>
               <div class="form-group" style="grid-column:1/-1;">
                 <label>Price in USD <span style="font-weight:400;color:var(--text-mid);font-size:0.82rem;">(default 45 — enter amount only)</span></label>

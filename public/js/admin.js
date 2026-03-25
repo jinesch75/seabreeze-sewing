@@ -255,20 +255,7 @@ async function loadDesigns() {
             ${photoCount > 1 ? `<span class="tag">🖼 ${photoCount} photos</span>` : ''}
             <span>Added ${formatDate(d.createdAt)}</span>
           </div>
-          <!-- Inline price editor -->
-          <div class="price-edit-row" id="price-row-${d.id}">
-            <div class="price-input-wrap">
-              <span>$</span>
-              <input type="number" id="price-input-${d.id}"
-                value="${escHtml(priceNum)}"
-                placeholder="45" min="0" step="1"
-                onkeydown="if(event.key==='Enter'){savePrice('${d.id}');}if(event.key==='Escape'){closePriceEdit('${d.id}');}">
-              <span>USD</span>
-            </div>
-            <button class="btn-save-price" onclick="savePrice('${d.id}')">Save</button>
-            <button class="btn-cancel-price" onclick="closePriceEdit('${d.id}')">Cancel</button>
-          </div>
-          <!-- Inline design editor (title, description) -->
+          <!-- Unified inline editor (title, price, description, isNew, photos) -->
           <div class="design-edit-row" id="edit-row-${d.id}">
             <div class="edit-fields">
               <div>
@@ -276,8 +263,33 @@ async function loadDesigns() {
                 <input type="text" id="edit-title-${d.id}" value="${escHtml(d.title)}" placeholder="Design title">
               </div>
               <div>
+                <label>Price (USD)</label>
+                <div class="price-input-wrap">
+                  <span>$</span>
+                  <input type="number" id="edit-price-${d.id}"
+                    value="${escHtml(priceNum)}"
+                    placeholder="45" min="0" step="1">
+                  <span>USD</span>
+                </div>
+              </div>
+              <div class="full">
                 <label>Description</label>
-                <textarea id="edit-desc-${d.id}" rows="3" placeholder="Describe the design…">${escHtml(d.description || '')}</textarea>
+                <textarea id="edit-desc-${d.id}" rows="2" placeholder="Describe the design…">${escHtml(d.description || '')}</textarea>
+              </div>
+              <div class="full" style="display:flex;align-items:center;gap:12px;">
+                <label class="featured-toggle" for="edit-isnew-${d.id}"
+                  style="flex:1;padding:9px 14px;margin:0;background:white;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;">
+                  <input type="checkbox" id="edit-isnew-${d.id}" ${d.isNew ? 'checked' : ''}>
+                  <div class="toggle-switch"></div>
+                  <div>
+                    <div class="toggle-label" style="font-size:0.82rem;">🆕 Mark as New</div>
+                    <div class="toggle-hint">Show "NEW" badge on this design</div>
+                  </div>
+                </label>
+                <button type="button" onclick="openPhotoMoveModal('${d.id}')"
+                  style="padding:9px 14px;background:var(--sand);border:1px solid var(--border);border-radius:var(--radius);font-family:'Lato',sans-serif;font-size:0.82rem;font-weight:700;color:var(--turquoise-dark);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:var(--transition);">
+                  📂 Photos (${photoCount})
+                </button>
               </div>
             </div>
             <div class="design-edit-actions">
@@ -288,28 +300,10 @@ async function loadDesigns() {
         </div>
         <div class="admin-design-actions">
           <button class="btn-icon btn-icon-toggle"
-            title="Edit title, description, category"
+            title="Edit design"
             onclick="openEditDesign('${d.id}')"
-            style="background:rgba(74,171,181,0.1);color:var(--turquoise-dark);font-size:0.75rem;width:auto;border-radius:8px;padding:0 10px;font-weight:700;font-family:'Lato',sans-serif;">
+            style="background:rgba(74,171,181,0.1);color:var(--turquoise-dark);font-size:0.75rem;width:auto;border-radius:8px;padding:0 12px;font-weight:700;font-family:'Lato',sans-serif;">
             ✏️ Edit
-          </button>
-          <button class="btn-icon btn-icon-toggle"
-            title="Edit price"
-            onclick="openPriceEdit('${d.id}')"
-            style="background:rgba(201,149,106,0.12);color:#8a5a2a;font-size:0.75rem;width:auto;border-radius:8px;padding:0 10px;font-weight:700;font-family:'Lato',sans-serif;">
-            💲 Price
-          </button>
-          <button class="btn-icon btn-icon-toggle"
-            title="Reorganise photos / set main photo"
-            onclick="openPhotoMoveModal('${d.id}')"
-            style="background:var(--sand);color:var(--turquoise-dark);font-size:0.8rem;width:auto;border-radius:8px;padding:0 10px;font-weight:700;font-family:'Lato',sans-serif;">
-            📂 Photos
-          </button>
-          <button class="btn-icon btn-icon-toggle"
-            title="${d.isNew ? 'Remove NEW badge' : 'Mark as New'}"
-            onclick="toggleNew('${d.id}', ${!d.isNew})"
-            style="${d.isNew ? 'background:rgba(201,149,106,0.2);color:#8a3a00;' : ''}">
-            ${d.isNew ? '🆕' : '🔖'}
           </button>
           <button class="btn-icon btn-icon-delete"
             title="Delete design"
@@ -649,15 +643,20 @@ function closeEditDesign(id) {
 async function saveEditDesign(id) {
   const titleEl = document.getElementById('edit-title-' + id);
   const descEl  = document.getElementById('edit-desc-' + id);
+  const priceEl = document.getElementById('edit-price-' + id);
+  const isNewEl = document.getElementById('edit-isnew-' + id);
   if (!titleEl) return;
   const title       = titleEl.value.trim();
   const description = descEl ? descEl.value.trim() : '';
   if (!title) { showToast('Title cannot be empty.', 'error'); return; }
+  const body = { title, description };
+  if (priceEl) body.price = formatPriceStr(priceEl.value.trim());
+  if (isNewEl) body.isNew = isNewEl.checked;
   try {
     const res = await fetch(`/admin/designs/${id}`, {
       method:  'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ title, description })
+      body:    JSON.stringify(body)
     });
     const json = await res.json();
     if (json.success) {
