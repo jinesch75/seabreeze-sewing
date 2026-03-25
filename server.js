@@ -57,14 +57,21 @@ const upload = multer({
 });
 
 // ── Middleware ─────────────────────────────────────────────
+// Trust Railway's reverse proxy so secure cookies work on HTTPS
+app.set('trust proxy', 1);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
-  secret: 'sbs-secret-key-change-me',
+  secret: process.env.SESSION_SECRET || 'sbs-secret-key-change-me',
   resave: false,
   saveUninitialized: false,
-  cookie: { maxAge: 8 * 60 * 60 * 1000 } // 8 hours
+  cookie: {
+    maxAge: 8 * 60 * 60 * 1000, // 8 hours
+    secure: process.env.NODE_ENV === 'production', // HTTPS-only in production
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+  }
 }));
 
 // ── Auth helper ────────────────────────────────────────────
