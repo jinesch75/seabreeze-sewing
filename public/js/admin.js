@@ -71,7 +71,7 @@ function switchTab(tab) {
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + tab)?.classList.add('active');
-  if (tab === 'about') { loadAboutSettings(); loadWorkshopSettings(); loadHeroPhotoPicker(); }
+  if (tab === 'about') { loadAboutSettings(); loadHeroPhotoPicker(); }
 }
 
 // ── Price helpers ─────────────────────────────────────────
@@ -699,7 +699,7 @@ async function openPhotoMoveModal(designId) {
   const grid = document.getElementById('photoMoveGrid');
   grid.innerHTML = (isLastPhoto
     ? `<div style="grid-column:1/-1;padding:14px 16px;background:#fef9ec;border:1px solid #f5c842;border-radius:var(--radius);font-size:0.88rem;color:#7a5f00;margin-bottom:4px;">
-        ⚠️ This design has only one photo. Moving it will <strong>permanently delete this design</strong> and move the photo to the chosen design.
+        ⚠️ This design has only one photo. Moving or removing it will <strong>permanently delete this design</strong>.
        </div>`
     : '') +
   images.map((src, i) => {
@@ -720,6 +720,10 @@ async function openPhotoMoveModal(designId) {
             ${opts}
           </select>
           <button onclick="movePhoto('${escAttr(designId)}', ${i})">${isLastPhoto ? 'Move & Delete Design' : 'Move Photo'}</button>
+          <button onclick="removePhoto('${escAttr(designId)}', ${i}, ${isLastPhoto})"
+            style="margin-top:6px;background:#fef2f2;border-color:#fca5a5;color:#dc2626;">
+            🗑 Remove Photo
+          </button>
         </div>
       </div>`;
   }).join('');
@@ -785,6 +789,44 @@ async function setMainPhoto(designId, imageIndex) {
     }
   } catch {
     showToast('Could not set main photo.', 'error');
+  }
+}
+
+// ── Remove a single photo from a design ───────────────────
+async function removePhoto(designId, imageIndex, isLastPhoto) {
+  const msg = isLastPhoto
+    ? 'This is the only photo for this design. Removing it will permanently delete the entire design. Continue?'
+    : 'Remove this photo? This cannot be undone.';
+  if (!confirm(msg)) return;
+
+  if (isLastPhoto) {
+    // Delete the whole design
+    try {
+      const res = await fetch(`/admin/designs/${designId}`, { method: 'DELETE' });
+      if (res.ok) {
+        showToast('Photo and design deleted.', 'success');
+        closePhotoMoveModal();
+      } else {
+        showToast('Could not delete design.', 'error');
+      }
+    } catch {
+      showToast('Could not delete design.', 'error');
+    }
+  } else {
+    // Delete just this image
+    try {
+      const res  = await fetch(`/admin/designs/${designId}/images/${imageIndex}`, { method: 'DELETE' });
+      const json = await res.json();
+      if (json.success) {
+        showToast('Photo removed.', 'success');
+        closePhotoMoveModal();
+        setTimeout(() => openPhotoMoveModal(designId), 400);
+      } else {
+        showToast(json.error || 'Could not remove photo.', 'error');
+      }
+    } catch {
+      showToast('Could not remove photo.', 'error');
+    }
   }
 }
 

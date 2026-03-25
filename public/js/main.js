@@ -40,11 +40,17 @@ function showToast(message, type = 'success') {
   toast._timer = setTimeout(() => toast.classList.remove('show'), 4000);
 }
 
+// ── Per-design image cache (used by lightbox) ─────────────
+const _designImages = {};
+
 // ── Design card renderer (shared across pages) ───────────
 function renderCard(design) {
   const images  = (design.images && design.images.length > 0) ? design.images : [design.image];
   const hasMany = images.length > 1;
   const cardId  = 'card-' + design.id;
+
+  // Cache images for the lightbox
+  _designImages[design.id] = images;
 
   // Build image gallery section
   const galleryHtml = hasMany
@@ -52,6 +58,7 @@ function renderCard(design) {
         ${images.map((src, i) => `
           <img src="${src}" alt="${escHtml(design.title)} — photo ${i + 1}" loading="lazy"
             class="gallery-slide${i === 0 ? ' active' : ''}"
+            onclick="openLightbox('${escAttr(design.id)}', ${i})"
             onerror="this.style.display='none'">`).join('')}
         <button class="gallery-arrow gallery-prev" onclick="slideGallery('${cardId}',-1)" aria-label="Previous photo">&#8249;</button>
         <button class="gallery-arrow gallery-next" onclick="slideGallery('${cardId}', 1)" aria-label="Next photo">&#8250;</button>
@@ -62,6 +69,7 @@ function renderCard(design) {
       </div>`
     : `<div class="design-card-img">
         <img src="${images[0]}" alt="${escHtml(design.title)}" loading="lazy"
+          onclick="openLightbox('${escAttr(design.id)}', 0)"
           onerror="this.style.display='none'">
         ${design.isNew ? '<div class="design-card-badge">NEW</div>' : ''}
       </div>`;
@@ -103,6 +111,48 @@ function goToSlide(cardId, index) {
   dots.forEach((d, i) => d.classList.toggle('active', i === index));
 }
 
+// ── Lightbox ──────────────────────────────────────────────
+let _lbImages = [];
+let _lbIdx    = 0;
+
+function openLightbox(designId, idx) {
+  _lbImages = _designImages[designId] || [];
+  _lbIdx    = idx || 0;
+  _refreshLightbox();
+  const overlay = document.getElementById('lightboxOverlay');
+  if (overlay) { overlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
+}
+
+function _refreshLightbox() {
+  const img     = document.getElementById('lightboxImg');
+  const prev    = document.getElementById('lightboxPrev');
+  const next    = document.getElementById('lightboxNext');
+  const counter = document.getElementById('lightboxCounter');
+  if (img) img.src = _lbImages[_lbIdx] || '';
+  const multi = _lbImages.length > 1;
+  if (prev)    { prev.className    = multi ? 'show' : ''; prev.style.display    = multi ? 'flex' : 'none'; }
+  if (next)    { next.className    = multi ? 'show' : ''; next.style.display    = multi ? 'flex' : 'none'; }
+  if (counter) counter.textContent = multi ? `${_lbIdx + 1} / ${_lbImages.length}` : '';
+}
+
+function lightboxPrev() {
+  if (!_lbImages.length) return;
+  _lbIdx = (_lbIdx - 1 + _lbImages.length) % _lbImages.length;
+  _refreshLightbox();
+}
+
+function lightboxNext() {
+  if (!_lbImages.length) return;
+  _lbIdx = (_lbIdx + 1) % _lbImages.length;
+  _refreshLightbox();
+}
+
+function closeLightbox() {
+  const overlay = document.getElementById('lightboxOverlay');
+  if (overlay) overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
 // ── Interest modal ────────────────────────────────────────
 function openInterestModal(itemTitle) {
   const modal   = document.getElementById('interestModal');
@@ -137,9 +187,14 @@ document.addEventListener('click', (e) => {
   if (e.target?.classList?.contains('modal-overlay')) closeModal();
 });
 
-// Close modal on Escape key
+// Close modal / lightbox on Escape; navigate lightbox with arrow keys
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') closeModal();
+  const lbOpen = document.getElementById('lightboxOverlay')?.classList.contains('open');
+  if (e.key === 'Escape') { if (lbOpen) closeLightbox(); else closeModal(); }
+  if (lbOpen) {
+    if (e.key === 'ArrowLeft')  lightboxPrev();
+    if (e.key === 'ArrowRight') lightboxNext();
+  }
 });
 
 // ── Modal form submission ─────────────────────────────────

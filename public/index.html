@@ -151,6 +151,34 @@
     </div>
   </div>
 
+  <!-- ── Photo Lightbox ────────────────────────────────── -->
+  <div id="lightboxOverlay" onclick="if(event.target===this)closeLightbox()" style="
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.88);
+    z-index:1000; align-items:center; justify-content:center; padding:20px;">
+    <button onclick="closeLightbox()" style="
+      position:absolute; top:18px; right:22px; background:rgba(255,255,255,0.15);
+      border:none; color:white; font-size:1.5rem; width:42px; height:42px;
+      border-radius:50%; cursor:pointer; display:flex; align-items:center;
+      justify-content:center; transition:background .2s;" title="Close">✕</button>
+    <button id="lightboxPrev" onclick="lightboxPrev()" style="
+      position:absolute; left:18px; background:rgba(255,255,255,0.15); border:none;
+      color:white; font-size:2rem; width:50px; height:50px; border-radius:50%;
+      cursor:pointer; display:none; align-items:center; justify-content:center;
+      transition:background .2s;" title="Previous">&#8249;</button>
+    <img id="lightboxImg" src="" alt="Design photo" style="
+      max-width:100%; max-height:90vh; border-radius:12px;
+      object-fit:contain; box-shadow:0 20px 60px rgba(0,0,0,0.6);">
+    <button id="lightboxNext" onclick="lightboxNext()" style="
+      position:absolute; right:18px; background:rgba(255,255,255,0.15); border:none;
+      color:white; font-size:2rem; width:50px; height:50px; border-radius:50%;
+      cursor:pointer; display:none; align-items:center; justify-content:center;
+      transition:background .2s;" title="Next">&#8250;</button>
+    <div id="lightboxCounter" style="
+      position:absolute; bottom:18px; left:50%; transform:translateX(-50%);
+      color:rgba(255,255,255,0.7); font-size:0.88rem; font-family:'Lato',sans-serif;
+      font-weight:700; letter-spacing:0.05em;"></div>
+  </div>
+
   <!-- ── Toast ──────────────────────────────────────────── -->
   <div class="toast" id="toast"></div>
 
@@ -218,6 +246,14 @@
     @media (max-width: 1100px) {
       .hero-photos-fan { display: none; }
     }
+
+    /* ── Lightbox ─────────────────────────────────────── */
+    #lightboxOverlay.open { display: flex !important; }
+    #lightboxPrev.show,
+    #lightboxNext.show   { display: flex !important; }
+    #lightboxPrev:hover,
+    #lightboxNext:hover  { background: rgba(255,255,255,0.28) !important; }
+    .gallery-slide, .design-card-img img { cursor: zoom-in; }
   </style>
 
   <script src="/js/main.js"></script>
@@ -254,6 +290,8 @@
       try {
         const res     = await fetch('/api/designs');
         const designs = await res.json();
+        // Show NEW-tagged items first
+        designs.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
         if (designs.length === 0) {
           grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-mid);padding:40px">No designs yet — add your first design in the admin panel!</p>';
         } else {

@@ -596,6 +596,11 @@
       cursor: pointer;
     }
 
+    /* ── Price field in edit row — keep compact ──────────── */
+    .design-edit-row .price-input-wrap {
+      max-width: 150px;
+    }
+
     /* ── Price input with $ USD wrapper ──────────────────── */
     .price-input-wrap {
       display: flex;
@@ -811,7 +816,7 @@
           ✉️ Inquiries <span id="inquiriesCount" class="tab-badge" style="display:none;"></span>
         </button>
         <button class="admin-tab" onclick="switchTab('about')">
-          🖼 About Page
+          🖼 Change pictures
         </button>
       </div>
 
@@ -843,12 +848,12 @@
 
             <!-- Fields -->
             <div class="upload-fields">
-              <div class="form-group" style="grid-column:1/-1;">
+              <div class="form-group">
                 <label>Design Title *</label>
                 <input type="text" name="title" id="uploadTitle" placeholder="Input the title you want to give to the design" required>
               </div>
-              <div class="form-group" style="grid-column:1/-1;">
-                <label>Price in USD <span style="font-weight:400;color:var(--text-mid);font-size:0.82rem;">(default 45 — enter amount only)</span></label>
+              <div class="form-group">
+                <label>Price in USD <span style="font-weight:400;color:var(--text-mid);font-size:0.82rem;">(default 45)</span></label>
                 <div class="price-input-wrap">
                   <span>$</span>
                   <input type="number" id="uploadPriceAmount" placeholder="45" min="0" step="1" value="45" style="border:none;background:transparent;">
@@ -956,38 +961,6 @@
             <button class="btn btn-primary btn-sm" onclick="saveHeroPhotos()" id="heroSaveBtn">Save Hero Photos</button>
             <span id="heroSaveStatus" style="font-size:0.85rem;color:var(--text-mid);"></span>
           </div>
-        </div>
-
-        <!-- Homepage Workshop Photo -->
-        <div class="about-photo-section">
-          <h3 style="margin-bottom:6px;">🏡 Homepage Workshop Photo</h3>
-          <p style="color:var(--text-mid);font-size:0.9rem;margin-bottom:24px;">
-            This photo appears in the "Crafted with Love" section on the homepage. Use a workshop or lifestyle photo.
-          </p>
-          <div class="about-photo-current" id="workshopPhotoCurrentWrap">
-            <div class="about-photo-placeholder" id="workshopPhotoPlaceholder">🧵</div>
-            <img id="workshopPhotoAdminImg" class="about-photo-preview" src="" alt="Workshop photo" style="display:none;">
-            <div style="flex:1;">
-              <div id="workshopPhotoStatus" style="font-weight:700;margin-bottom:8px;">No photo uploaded yet</div>
-              <p style="font-size:0.85rem;color:var(--text-mid);margin-bottom:16px;">Upload a workshop or lifestyle photo to show on the homepage.</p>
-              <button id="workshopPhotoDeleteBtn" class="btn-sm-outline btn-sm-delete" onclick="deleteWorkshopPhoto()" style="display:none;">Remove Photo</button>
-            </div>
-          </div>
-          <form id="workshopPhotoForm" enctype="multipart/form-data">
-            <div class="image-drop-zone" id="workshopDropZone" style="margin-bottom:16px;">
-              <input type="file" id="workshopPhotoInput" name="photo" accept="image/*" onchange="previewWorkshopPhoto(this)">
-              <div id="workshopDropContent">
-                <div class="drop-icon">🖼️</div>
-                <div class="drop-text">Click to choose a photo</div>
-                <div class="drop-hint">JPG, PNG, WebP · up to 10 MB</div>
-              </div>
-              <div id="workshopPhotoNewPreview" style="display:none;text-align:center;">
-                <img id="workshopPhotoNewImg" src="" alt="New photo" style="max-height:180px;border-radius:var(--radius);margin:0 auto;">
-              </div>
-            </div>
-            <button type="submit" class="btn btn-primary" id="workshopPhotoUploadBtn">Upload Photo</button>
-            <button type="button" onclick="clearWorkshopPhotoInput()" style="background:none;border:none;color:var(--text-mid);font-family:'Lato',sans-serif;font-size:0.85rem;cursor:pointer;margin-left:12px;" id="workshopPhotoClearBtn" style="display:none;">Cancel</button>
-          </form>
         </div>
 
       </div>
