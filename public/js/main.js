@@ -13,20 +13,30 @@ if (nav) {
 
 // ── Hamburger menu ────────────────────────────────────────
 function toggleMenu() {
-  const links = document.getElementById('navLinks');
+  const navLinks  = document.getElementById('navLinks');
   const hamburger = document.getElementById('hamburger');
-  if (!links) return;
-  const open = links.classList.toggle('open');
-  hamburger.style.opacity = open ? '0.6' : '1';
-  document.body.style.overflow = open ? 'hidden' : '';
+  if (!navLinks) return;
+  const open = navLinks.classList.toggle('open');
+  // Animate hamburger → X via CSS class
+  hamburger?.classList.toggle('open', open);
+  // iOS-safe scroll lock: must set both html and body
+  const lock = open ? 'hidden' : '';
+  document.body.style.overflow = lock;
+  document.documentElement.style.overflow = lock;
 }
+
+function _closeMenu() {
+  document.getElementById('navLinks')?.classList.remove('open');
+  document.getElementById('hamburger')?.classList.remove('open');
+  document.body.style.overflow = '';
+  document.documentElement.style.overflow = '';
+}
+
 // Close menu on link click
 document.addEventListener('DOMContentLoaded', () => {
-  const links = document.querySelectorAll('#navLinks a');
-  links.forEach(l => l.addEventListener('click', () => {
-    document.getElementById('navLinks')?.classList.remove('open');
-    document.body.style.overflow = '';
-  }));
+  document.querySelectorAll('#navLinks a').forEach(l => {
+    l.addEventListener('click', _closeMenu);
+  });
 });
 
 // ── Toast notification ────────────────────────────────────
