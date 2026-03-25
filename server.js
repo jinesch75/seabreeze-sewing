@@ -324,6 +324,34 @@ app.put('/admin/settings/hero-photos', requireAdmin, (req, res) => {
   res.json({ success: true, heroPhotos: s.heroPhotos });
 });
 
+// POST upload a brand-new photo directly for the hero banner (admin)
+app.post('/admin/settings/hero-photos/upload', requireAdmin, upload.single('photo'), async (req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'No photo uploaded.' });
+  try {
+    const url = await uploadImage(req.file.buffer, req.file.originalname);
+    let s = readJSON(SETTINGS_FILE);
+    if (!s || Array.isArray(s)) s = {};
+    if (!Array.isArray(s.heroUploads)) s.heroUploads = [];
+    s.heroUploads.push(url);                          // track hero-specific uploads
+    if (!Array.isArray(s.heroPhotos)) s.heroPhotos = [];
+    if (s.heroPhotos.length < 5) s.heroPhotos.push(url); // auto-add if room
+    writeJSON(SETTINGS_FILE, s);
+    res.json({ success: true, url, heroPhotos: s.heroPhotos, heroUploads: s.heroUploads });
+  } catch (err) {
+    console.error('hero-photo upload error:', err);
+    res.status(500).json({ error: 'Image upload failed. Please try again.' });
+  }
+});
+
+// DELETE all hero photos — reset to empty (admin)
+app.delete('/admin/settings/hero-photos', requireAdmin, (req, res) => {
+  let s = readJSON(SETTINGS_FILE);
+  if (!s || Array.isArray(s)) s = {};
+  s.heroPhotos = [];
+  writeJSON(SETTINGS_FILE, s);
+  res.json({ success: true });
+});
+
 // PATCH move a single image from one design to another
 app.patch('/admin/designs/:sourceId/move-image', requireAdmin, (req, res) => {
   const { imageIndex, targetDesignId } = req.body;

@@ -909,11 +909,13 @@ async function loadHeroPhotoPicker() {
   const picker = document.getElementById('heroPhotoPicker');
   if (!picker) return;
 
-  // Load current hero photos from settings
+  // Load current hero photos + hero-specific uploads from settings
+  let heroUploads = [];
   try {
     const sr = await fetch('/api/settings');
     const s  = await sr.json();
     heroSelectedPhotos = Array.isArray(s.heroPhotos) ? [...s.heroPhotos] : [];
+    heroUploads        = Array.isArray(s.heroUploads) ? [...s.heroUploads] : [];
   } catch { heroSelectedPhotos = []; }
 
   // Update preview slots
@@ -928,6 +930,8 @@ async function loadHeroPhotoPicker() {
       return;
     }
     const allPhotos = [];
+    // Hero-specific uploads appear first
+    heroUploads.forEach(url => { if (url && !allPhotos.includes(url)) allPhotos.push(url); });
     ds.forEach(d => {
       const imgs = d.images && d.images.length > 0 ? d.images : (d.image ? [d.image] : []);
       imgs.forEach(url => { if (url && !allPhotos.includes(url)) allPhotos.push(url); });
@@ -935,13 +939,73 @@ async function loadHeroPhotoPicker() {
     heroCachedPhotos = allPhotos;
 
     if (allPhotos.length === 0) {
-      picker.innerHTML = '<div style="grid-column:1/-1;color:var(--text-light);text-align:center;padding:20px;">No design photos uploaded yet.</div>';
+      picker.innerHTML = '<div style="grid-column:1/-1;color:var(--text-light);text-align:center;padding:20px;">No photos yet — upload one above or add design photos first.</div>';
       return;
     }
 
     renderHeroPickerGrid();
   } catch {
     picker.innerHTML = '<div style="grid-column:1/-1;color:#dc2626;text-align:center;padding:20px;">Could not load photos.</div>';
+  }
+}
+
+// Upload a brand-new photo straight to the hero banner
+function updateHeroUploadLabel(input) {
+  const lbl = document.getElementById('heroUploadLabel');
+  if (lbl) lbl.textContent = input.files.length > 0 ? input.files[0].name : 'No file selected';
+}
+
+async function uploadNewHeroPhoto() {
+  const input = document.getElementById('heroPhotoUploadInput');
+  if (!input || !input.files.length) {
+    showToast('Please choose a photo first.', 'error');
+    return;
+  }
+  const btn = document.getElementById('heroUploadBtn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Uploading…'; }
+  try {
+    const fd = new FormData();
+    fd.append('photo', input.files[0]);
+    const res  = await fetch('/admin/settings/hero-photos/upload', { method: 'POST', body: fd });
+    const json = await res.json();
+    if (json.success) {
+      heroSelectedPhotos = Array.isArray(json.heroPhotos) ? json.heroPhotos : heroSelectedPhotos;
+      if (!heroCachedPhotos.includes(json.url)) heroCachedPhotos.unshift(json.url);
+      updateHeroPreview();
+      renderHeroPickerGrid();
+      input.value = '';
+      const lbl = document.getElementById('heroUploadLabel');
+      if (lbl) lbl.textContent = 'No file selected';
+      const status = document.getElementById('heroSaveStatus');
+      if (status) status.textContent = `${heroSelectedPhotos.length} photo${heroSelectedPhotos.length !== 1 ? 's' : ''} saved ✓`;
+      showToast('Photo uploaded and added to hero!', 'success');
+    } else {
+      showToast(json.error || 'Upload failed.', 'error');
+    }
+  } catch {
+    showToast('Could not upload photo.', 'error');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = 'Upload Photo'; }
+}
+
+// Reset (clear) all hero photos
+async function resetHeroPhotos() {
+  if (!confirm('Remove all hero photos? The fan on the homepage will be hidden until you add photos again.')) return;
+  try {
+    const res  = await fetch('/admin/settings/hero-photos', { method: 'DELETE' });
+    const json = await res.json();
+    if (json.success) {
+      heroSelectedPhotos = [];
+      updateHeroPreview();
+      renderHeroPickerGrid();
+      const status = document.getElementById('heroSaveStatus');
+      if (status) status.textContent = '';
+      showToast('Hero photos cleared.', 'success');
+    } else {
+      showToast('Could not reset hero photos.', 'error');
+    }
+  } catch {
+    showToast('Could not reset hero photos.', 'error');
   }
 }
 

@@ -957,8 +957,10 @@
         <div class="about-photo-section">
           <h3 style="margin-bottom:6px;">🌊 Hero Photos — "Where the Ocean Inspires Every Stitch"</h3>
           <p style="color:var(--text-mid);font-size:0.9rem;margin-bottom:20px;">
-            Choose up to 5 photos to display in the fan on the right side of the homepage banner.
+            Choose up to 5 photos to display in the fan on the right side of the homepage banner. You can pick from existing design photos below, or upload brand-new ones.
           </p>
+
+          <!-- Preview slots -->
           <div class="hero-selected-preview" id="heroSelectedPreview">
             <div class="hero-preview-slot empty" id="heroSlot0"><span>1</span></div>
             <div class="hero-preview-slot empty" id="heroSlot1"><span>2</span></div>
@@ -966,14 +968,32 @@
             <div class="hero-preview-slot empty" id="heroSlot3"><span>4</span></div>
             <div class="hero-preview-slot empty" id="heroSlot4"><span>5</span></div>
           </div>
+
+          <!-- Upload new hero photo -->
+          <div class="add-photo-zone" style="margin-bottom:20px;">
+            <p>📤 Upload a new photo directly for the hero banner</p>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;">
+              <label class="btn btn-outline btn-sm" style="cursor:pointer;display:inline-block;margin:0;">
+                Choose Photo
+                <input type="file" id="heroPhotoUploadInput" accept="image/*" style="display:none;" onchange="updateHeroUploadLabel(this)">
+              </label>
+              <span id="heroUploadLabel" style="font-size:0.82rem;color:var(--text-mid);">No file selected</span>
+              <button class="btn btn-primary btn-sm" onclick="uploadNewHeroPhoto()" id="heroUploadBtn" style="margin:0;">Upload Photo</button>
+            </div>
+          </div>
+
+          <!-- Picker from existing photos -->
           <p style="font-size:0.85rem;font-weight:700;color:var(--text);margin-bottom:10px;">
-            Click photos to select (max 4) — click again to deselect:
+            Or pick from existing photos (click to select, click again to deselect — max 5):
           </p>
           <div class="hero-photo-picker-grid" id="heroPhotoPicker">
             <div style="grid-column:1/-1;color:var(--text-light);text-align:center;padding:20px;">Loading…</div>
           </div>
-          <div style="margin-top:16px;display:flex;gap:12px;align-items:center;">
+
+          <!-- Save / Reset actions -->
+          <div style="margin-top:16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
             <button class="btn btn-primary btn-sm" onclick="saveHeroPhotos()" id="heroSaveBtn">Save Hero Photos</button>
+            <button class="btn btn-outline btn-sm" onclick="resetHeroPhotos()" style="color:#dc2626;border-color:#fecaca;">Reset All</button>
             <span id="heroSaveStatus" style="font-size:0.85rem;color:var(--text-mid);"></span>
           </div>
         </div>
