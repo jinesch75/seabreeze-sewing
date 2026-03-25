@@ -269,7 +269,7 @@ app.put('/admin/settings/hero-photos', requireAdmin, (req, res) => {
   if (!Array.isArray(photos)) return res.status(400).json({ error: 'photos must be an array.' });
   let s = readJSON(SETTINGS_FILE);
   if (!s || Array.isArray(s)) s = {};
-  s.heroPhotos = photos.slice(0, 4);
+  s.heroPhotos = photos.slice(0, 5);
   writeJSON(SETTINGS_FILE, s);
   res.json({ success: true, heroPhotos: s.heroPhotos });
 });
@@ -322,7 +322,7 @@ app.get('/admin/designs', requireAdmin, (req, res) => {
 
 // POST new design (with one or more images)
 app.post('/admin/designs', requireAdmin, upload.array('images', 10), (req, res) => {
-  const { title, description, category, featured, price } = req.body;
+  const { title, description, category, featured, price, isNew } = req.body;
   if (!title || !req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'Title and at least one image are required.' });
   }
@@ -337,6 +337,7 @@ app.post('/admin/designs', requireAdmin, upload.array('images', 10), (req, res) 
     image:       imageUrls[0],   // primary image (first uploaded)
     images:      imageUrls,      // all images
     featured:    featured === 'true' || featured === true,
+    isNew:       isNew === 'true' || isNew === true,
     createdAt:   new Date().toISOString()
   };
   designs.push(newDesign);
@@ -349,12 +350,13 @@ app.patch('/admin/designs/:id', requireAdmin, upload.array('images', 10), (req, 
   const designs = readJSON(DESIGNS_FILE);
   const idx = designs.findIndex(d => d.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Design not found.' });
-  const { title, description, category, featured, price } = req.body;
+  const { title, description, category, featured, price, isNew } = req.body;
   if (title)       designs[idx].title       = title;
   if (description !== undefined) designs[idx].description = description;
   if (category)    designs[idx].category    = category;
   if (price !== undefined) designs[idx].price = price;
   if (featured !== undefined) designs[idx].featured = featured === 'true' || featured === true;
+  if (isNew !== undefined) designs[idx].isNew = isNew === 'true' || isNew === true;
   // Append any newly uploaded images
   if (req.files && req.files.length > 0) {
     const newUrls = req.files.map(f => '/images/uploads/' + f.filename);

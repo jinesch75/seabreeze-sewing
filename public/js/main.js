@@ -58,12 +58,12 @@ function renderCard(design) {
         <div class="gallery-dots">
           ${images.map((_, i) => `<span class="gallery-dot${i === 0 ? ' active' : ''}" onclick="goToSlide('${cardId}',${i})"></span>`).join('')}
         </div>
-        ${design.featured ? '<div class="design-card-badge">New</div>' : ''}
+        ${design.isNew ? '<div class="design-card-badge">NEW</div>' : ''}
       </div>`
     : `<div class="design-card-img">
         <img src="${images[0]}" alt="${escHtml(design.title)}" loading="lazy"
           onerror="this.style.display='none'">
-        ${design.featured ? '<div class="design-card-badge">New</div>' : ''}
+        ${design.isNew ? '<div class="design-card-badge">NEW</div>' : ''}
       </div>`;
 
   return `

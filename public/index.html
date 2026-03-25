@@ -20,7 +20,6 @@
         <li><a href="/designs.html">Designs</a></li>
         <li><a href="/about.html">About</a></li>
         <li><a href="/contact.html">Contact</a></li>
-        <li><a href="/designs.html" class="btn btn-primary nav-cta">Shop Designs</a></li>
       </ul>
       <div class="nav-hamburger" id="hamburger" onclick="toggleMenu()">
         <span></span><span></span><span></span>
@@ -44,10 +43,6 @@
             Each piece from Sea Breeze Sewing BDA is crafted with care in our Bermudian workshop —
             blending the island's natural beauty with timeless, wearable elegance.
           </p>
-          <div class="hero-actions">
-            <a href="/designs.html" class="btn btn-white">Explore Designs</a>
-            <a href="/about.html" class="btn btn-ghost">Our Story</a>
-          </div>
         </div>
 
         <!-- Right: 3-photo overlapping fan -->
@@ -66,14 +61,14 @@
     </div>
   </section>
 
-  <!-- ── Featured Designs ──────────────────────────────── -->
+  <!-- ── Full Design Catalogue ─────────────────────────── -->
   <section class="section">
     <div class="container">
       <div class="text-center">
-        <span class="section-label">Latest Creations</span>
-        <h2 class="section-title">Newest Designs</h2>
+        <span class="section-label">Handcrafted in Bermuda</span>
+        <h2 class="section-title">Our Designs</h2>
         <p class="section-subtitle" style="margin: 0 auto;">
-          Fresh from the workshop — these are our most recently crafted pieces, each one unique.
+          Browse our complete collection — each piece lovingly made in our Bermudian workshop.
         </p>
       </div>
       <div class="featured-grid" id="featuredGrid">
@@ -82,40 +77,9 @@
         <div class="skeleton skeleton-card"></div>
         <div class="skeleton skeleton-card"></div>
       </div>
-      <div class="text-center" style="margin-top: 48px;">
-        <a href="/designs.html" class="btn btn-outline">View All Designs</a>
-      </div>
     </div>
   </section>
 
-  <!-- ── About Snippet ─────────────────────────────────── -->
-  <section class="section">
-    <div class="container">
-      <div class="about-story">
-        <div class="about-image-wrap">
-          <div class="about-image-placeholder" id="workshopPlaceholder">
-            <div class="placeholder-icon">🧵</div>
-            <p>Your workshop photo goes here — add it via the admin panel</p>
-          </div>
-          <img id="workshopPhotoImg" src="" alt="Workshop" style="display:none;width:100%;height:100%;object-fit:cover;border-radius:var(--radius-lg);">
-          <div class="about-deco"></div>
-        </div>
-        <div class="about-text">
-          <span class="section-label">The Maker</span>
-          <h2>Crafted with Love<br>in Bermuda</h2>
-          <p>
-            Sea Breeze Sewing BDA was born from a passion for beautiful, well-made designs
-            and a deep love for Bermuda's vibrant culture and natural landscape.
-          </p>
-          <p>
-            Every piece is sewn by hand in our island workshop, using carefully selected
-            fabrics that celebrate the warmth, colour, and spirit of Bermuda.
-          </p>
-          <a href="/about.html" class="btn btn-primary" style="margin-top: 12px;">Read Our Story</a>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- ── Footer ─────────────────────────────────────────── -->
   <footer>
@@ -212,38 +176,48 @@
       gap: 64px;
     }
 
-    /* ── Three-photo overlapping fan ─────────────────── */
+    /* ── Five-photo overlapping fan ──────────────────── */
     .hero-photos-fan {
       position: relative;
-      width: 230px;
-      height: 270px;
+      width: 318px;
+      height: 280px;
       flex-shrink: 0;
     }
     .hero-fan-photo {
       position: absolute;
-      width: 120px;
-      height: 155px;
+      width: 112px;
+      height: 148px;
       border-radius: 12px;
       object-fit: cover;
       box-shadow: 0 14px 36px rgba(0,0,0,0.42);
       border: 3px solid rgba(255,255,255,0.28);
     }
     .hero-fan-photo:nth-child(1) {
-      top: 40px; left: 0px;
-      transform: rotate(-9deg);
+      top: 58px; left: 0px;
+      transform: rotate(-14deg);
       z-index: 1;
     }
     .hero-fan-photo:nth-child(2) {
-      top: 20px; left: 52px;
-      transform: rotate(1deg);
+      top: 26px; left: 52px;
+      transform: rotate(-6deg);
       z-index: 2;
     }
     .hero-fan-photo:nth-child(3) {
-      top: 50px; left: 104px;
-      transform: rotate(8deg);
+      top: 10px; left: 103px;
+      transform: rotate(1deg);
       z-index: 3;
     }
-    @media (max-width: 1000px) {
+    .hero-fan-photo:nth-child(4) {
+      top: 26px; left: 154px;
+      transform: rotate(8deg);
+      z-index: 4;
+    }
+    .hero-fan-photo:nth-child(5) {
+      top: 58px; left: 206px;
+      transform: rotate(15deg);
+      z-index: 5;
+    }
+    @media (max-width: 1100px) {
       .hero-photos-fan { display: none; }
     }
   </style>
@@ -268,18 +242,19 @@
         }
         const fanEl = document.getElementById('heroPhotosFan');
         if (fanEl && srcs.length >= 1) {
-          // Use up to 3 photos for the fan; cycle back if fewer available
-          const picks = [srcs[0], srcs[1] || srcs[0], srcs[2] || srcs[0]];
+          // Use up to 5 photos for the fan; cycle back if fewer available
+          const picks = [];
+          for (let i = 0; i < 5; i++) picks.push(srcs[i % srcs.length]);
           fanEl.innerHTML = picks.map(src =>
             `<img class="hero-fan-photo" src="${src}" alt="Design photo" loading="lazy" onerror="this.style.display='none'">`
           ).join('');
         }
       } catch {}
 
-      // ── Load featured designs ────────────────────────
+      // ── Load all designs catalogue ───────────────────
       const grid = document.getElementById('featuredGrid');
       try {
-        const res     = await fetch('/api/designs/featured');
+        const res     = await fetch('/api/designs');
         const designs = await res.json();
         if (designs.length === 0) {
           grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-mid);padding:40px">No designs yet — add your first design in the admin panel!</p>';
@@ -289,19 +264,6 @@
       } catch {
         grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:var(--text-mid)">Unable to load designs.</p>';
       }
-
-      // ── Load workshop photo ──────────────────────────
-      try {
-        const res = await fetch('/api/settings');
-        const s   = await res.json();
-        if (s.workshopPhoto) {
-          const img = document.getElementById('workshopPhotoImg');
-          const ph  = document.getElementById('workshopPlaceholder');
-          img.src = s.workshopPhoto;
-          img.style.display = 'block';
-          if (ph) ph.style.display = 'none';
-        }
-      } catch {}
 
     });
   </script>

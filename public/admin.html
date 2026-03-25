@@ -872,12 +872,22 @@
                 <textarea name="description" id="uploadDescription" rows="3" placeholder="Describe the design, materials, and any special details..."></textarea>
               </div>
               <div class="form-group" style="grid-column:1/-1;">
+                <label class="featured-toggle" for="uploadIsNew">
+                  <input type="checkbox" id="uploadIsNew" name="isNew">
+                  <div class="toggle-switch"></div>
+                  <div>
+                    <div class="toggle-label">🆕 Mark as New</div>
+                    <div class="toggle-hint">Show a "NEW" badge on this design across the website</div>
+                  </div>
+                </label>
+              </div>
+              <div class="form-group" style="grid-column:1/-1;">
                 <label class="featured-toggle" for="uploadFeatured">
                   <input type="checkbox" id="uploadFeatured" name="featured">
                   <div class="toggle-switch"></div>
                   <div>
                     <div class="toggle-label">Feature on Homepage</div>
-                    <div class="toggle-hint">Show this design in the "Newest Designs" section on the home page</div>
+                    <div class="toggle-hint">Highlight this design (used for internal sorting)</div>
                   </div>
                 </label>
               </div>
@@ -967,13 +977,14 @@
         <div class="about-photo-section">
           <h3 style="margin-bottom:6px;">🌊 Hero Photos — "Where the Ocean Inspires Every Stitch"</h3>
           <p style="color:var(--text-mid);font-size:0.9rem;margin-bottom:20px;">
-            Choose up to 4 photos to display in the two side columns on the homepage banner. The first 2 appear on the left, the last 2 on the right.
+            Choose up to 5 photos to display in the fan on the right side of the homepage banner.
           </p>
           <div class="hero-selected-preview" id="heroSelectedPreview">
             <div class="hero-preview-slot empty" id="heroSlot0"><span>1</span></div>
             <div class="hero-preview-slot empty" id="heroSlot1"><span>2</span></div>
             <div class="hero-preview-slot empty" id="heroSlot2"><span>3</span></div>
             <div class="hero-preview-slot empty" id="heroSlot3"><span>4</span></div>
+            <div class="hero-preview-slot empty" id="heroSlot4"><span>5</span></div>
           </div>
           <p style="font-size:0.85rem;font-weight:700;color:var(--text);margin-bottom:10px;">
             Click photos to select (max 4) — click again to deselect:

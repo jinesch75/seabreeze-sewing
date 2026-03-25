@@ -251,6 +251,7 @@ async function loadDesigns() {
           <div class="admin-design-title">${escHtml(d.title)}</div>
           <div class="admin-design-meta">
             <span class="tag">${escHtml(d.category)}</span>
+            ${d.isNew ? '<span class="tag" style="background:rgba(201,149,106,0.18);color:#8a3a00;font-weight:700;">🆕 NEW</span>' : ''}
             ${d.featured ? '<span class="tag featured">★ Featured</span>' : ''}
             ${d.price
               ? `<span class="tag" style="background:rgba(201,149,106,0.15);color:#8a5a2a;">💰 ${escHtml(d.price)}</span>`
@@ -315,6 +316,12 @@ async function loadDesigns() {
             📂 Photos
           </button>
           <button class="btn-icon btn-icon-toggle"
+            title="${d.isNew ? 'Remove NEW badge' : 'Mark as New'}"
+            onclick="toggleNew('${d.id}', ${!d.isNew})"
+            style="${d.isNew ? 'background:rgba(201,149,106,0.2);color:#8a3a00;' : ''}">
+            ${d.isNew ? '🆕' : '🔖'}
+          </button>
+          <button class="btn-icon btn-icon-toggle"
             title="${d.featured ? 'Unfeature' : 'Feature on homepage'}"
             onclick="toggleFeatured('${d.id}', ${!d.featured})">
             ${d.featured ? '★' : '☆'}
@@ -340,6 +347,20 @@ async function toggleFeatured(id, featured) {
       body:    JSON.stringify({ featured })
     });
     showToast(featured ? 'Design featured on homepage!' : 'Design removed from homepage.', 'success');
+    loadDesigns();
+  } catch {
+    showToast('Could not update design.', 'error');
+  }
+}
+
+async function toggleNew(id, isNew) {
+  try {
+    await fetch(`/admin/designs/${id}`, {
+      method:  'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ isNew })
+    });
+    showToast(isNew ? 'NEW badge added to design!' : 'NEW badge removed from design.', 'success');
     loadDesigns();
   } catch {
     showToast('Could not update design.', 'error');
@@ -954,8 +975,8 @@ function toggleHeroPhoto(url) {
   if (idx > -1) {
     heroSelectedPhotos.splice(idx, 1);
   } else {
-    if (heroSelectedPhotos.length >= 4) {
-      showToast('Maximum 4 hero photos. Deselect one first.', 'error');
+    if (heroSelectedPhotos.length >= 5) {
+      showToast('Maximum 5 hero photos. Deselect one first.', 'error');
       return;
     }
     heroSelectedPhotos.push(url);
@@ -966,8 +987,8 @@ function toggleHeroPhoto(url) {
 }
 
 function updateHeroPreview() {
-  const labels = ['Left 1', 'Left 2', 'Right 1', 'Right 2'];
-  for (let i = 0; i < 4; i++) {
+  const labels = ['Photo 1', 'Photo 2', 'Photo 3', 'Photo 4', 'Photo 5'];
+  for (let i = 0; i < 5; i++) {
     const slot = document.getElementById('heroSlot' + i);
     if (!slot) continue;
     const url = heroSelectedPhotos[i];
