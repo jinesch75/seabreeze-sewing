@@ -239,7 +239,6 @@ ul { list-style: none; }
   display: flex;
   align-items: center;
   position: relative;
-  overflow: hidden;
   background: linear-gradient(145deg, #1E6B75 0%, #2E8A94 40%, #4AABB5 70%, #7CC8D0 100%);
 }
 .hero-overlay {
