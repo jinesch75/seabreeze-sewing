@@ -250,6 +250,9 @@ ul { list-style: none; }
   position: absolute;
   bottom: -2px; left: 0; right: 0;
 }
+.hero-wave svg {
+  display: block;
+}
 .hero-content {
   position: relative;
   z-index: 2;
