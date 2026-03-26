@@ -5,10 +5,12 @@ node_modules/
 public/images/uploads/
 
 # Data files — these are managed live on the server (admin uploads, contacts,
-# settings). They must NOT be overwritten when you pull code changes from GitHub.
+# settings, and editable page content). They must NOT be overwritten when you
+# pull code changes from GitHub.
 data/settings.json
 data/designs.json
 data/contacts.json
+data/content.json
 
 # OS / editor junk
 .DS_Store

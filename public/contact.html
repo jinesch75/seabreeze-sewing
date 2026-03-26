@@ -29,9 +29,9 @@
   <!-- ── Page Header ────────────────────────────────────── -->
   <div class="contact-header">
     <div class="container">
-      <span class="section-label" style="color:rgba(255,255,255,0.7)">Say Hello</span>
-      <h1>Get in Touch</h1>
-      <p>Interested in a design, or want to ask about a custom piece? I'd love to hear from you.</p>
+      <span class="section-label" id="contactHeaderLabel" style="color:rgba(255,255,255,0.7)">Say Hello</span>
+      <h1 id="contactHeaderHeading">Get in Touch</h1>
+      <p id="contactHeaderSubtitle">Interested in a design, or want to ask about a custom piece? I'd love to hear from you.</p>
     </div>
   </div>
 
@@ -42,8 +42,8 @@
 
         <!-- Info Column -->
         <div class="contact-info">
-          <h2>Let's Talk</h2>
-          <p>
+          <h2 id="contactInfoHeading">Let's Talk</h2>
+          <p id="contactInfoPara">
             No complicated checkout process — just a simple message. Once I receive your inquiry,
             I'll get back to you personally to discuss the details and arrange the transaction.
           </p>
@@ -52,37 +52,37 @@
               <div class="contact-detail-icon">✉️</div>
               <div>
                 <h4>Email</h4>
-                <p>Martine Brosius-Rothwell</p>
-                <p><a href="mailto:martinebrosius@hotmail.com">martinebrosius@hotmail.com</a></p>
+                <p id="contactEmailName">Martine Brosius-Rothwell</p>
+                <p><a href="mailto:martinebrosius@hotmail.com" id="contactEmailLink">martinebrosius@hotmail.com</a></p>
               </div>
             </div>
             <div class="contact-detail">
               <div class="contact-detail-icon">📞</div>
               <div>
                 <h4>Phone</h4>
-                <p>Martine Brosius-Rothwell</p>
-                <p><a href="tel:+14412974463">001 (441) 297-4463</a></p>
+                <p id="contactPhoneName">Martine Brosius-Rothwell</p>
+                <p><a href="tel:+14412974463" id="contactPhoneLink">001 (441) 297-4463</a></p>
               </div>
             </div>
             <div class="contact-detail">
               <div class="contact-detail-icon">📍</div>
               <div>
                 <h4>Location</h4>
-                <p>Bermuda</p>
+                <p id="contactLocation">Bermuda</p>
               </div>
             </div>
             <div class="contact-detail">
               <div class="contact-detail-icon">⏱️</div>
               <div>
                 <h4>Response Time</h4>
-                <p>Usually within 1–2 business days</p>
+                <p id="contactResponseTime">Usually within 1–2 business days</p>
               </div>
             </div>
           </div>
 
           <div style="margin-top: 40px; padding: 24px; background: var(--sand); border-radius: var(--radius); border-left: 3px solid var(--turquoise);">
-            <h4 style="margin-bottom: 8px; font-size:1rem;">How it works</h4>
-            <p style="font-size:0.9rem; color:var(--text-mid); line-height:1.7;">
+            <h4 id="contactHowItWorksTitle" style="margin-bottom: 8px; font-size:1rem;">How it works</h4>
+            <p id="contactHowItWorksDesc" style="font-size:0.9rem; color:var(--text-mid); line-height:1.7;">
               Send me a message describing the item you're interested in. I'll reply to confirm
               availability and discuss sizing, personalisation options, and payment — all handled
               personally, at our own pace.
@@ -149,7 +149,7 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <img src="/images/logo.svg" alt="Sea Breeze Sewing BDA" class="nav-logo-img" style="margin-bottom:12px;">
-          <p>Handcrafted clothing lovingly made in our Bermudian workshop.</p>
+          <p id="footerBrandDesc">Handcrafted clothing lovingly made in our Bermudian workshop.</p>
         </div>
         <div class="footer-col">
           <h4>Navigation</h4>
@@ -162,15 +162,15 @@
         <div class="footer-col">
           <h4>Contact</h4>
           <ul>
-            <li>Martine Brosius-Rothwell</li>
-            <li><a href="mailto:martinebrosius@hotmail.com">martinebrosius@hotmail.com</a></li>
-            <li><a href="tel:+14412974463">001 (441) 297-4463</a></li>
-            <li>Bermuda</li>
+            <li id="footerOwnerName">Martine Brosius-Rothwell</li>
+            <li><a href="mailto:martinebrosius@hotmail.com" id="footerEmailLink">martinebrosius@hotmail.com</a></li>
+            <li><a href="tel:+14412974463" id="footerPhoneLink">001 (441) 297-4463</a></li>
+            <li id="footerLocation">Bermuda</li>
           </ul>
         </div>
       </div>
       <div class="footer-bottom">
-        <span>© 2026 Sea Breeze Sewing BDA. All rights reserved.</span>
+        <span id="footerCopyright">© 2026 Sea Breeze Sewing BDA. All rights reserved.</span>
         <a href="/admin.html" style="font-size:0.82rem; color:var(--turquoise-light); opacity:0.7;">⚙ Admin Panel</a>
       </div>
     </div>
@@ -289,6 +289,42 @@
 
   <script src="/js/main.js"></script>
   <script>
+    // ── Load CMS page text ─────────────────────────────────
+    (async () => {
+      try {
+        const cRes = await fetch('/api/content');
+        const c    = await cRes.json();
+        const t = (id, v) => { const e = document.getElementById(id); if (e && v != null) e.textContent = v; };
+        // Contact page header
+        t('contactHeaderLabel',    c.contact?.headerLabel);
+        t('contactHeaderHeading',  c.contact?.headerHeading);
+        t('contactHeaderSubtitle', c.contact?.headerSubtitle);
+        // Info column
+        t('contactInfoHeading',       c.contact?.infoHeading);
+        t('contactInfoPara',          c.contact?.infoPara);
+        t('contactHowItWorksTitle',   c.contact?.howItWorksTitle);
+        t('contactHowItWorksDesc',    c.contact?.howItWorksDesc);
+        // Contact details
+        t('contactEmailName',    c.shared?.ownerName);
+        t('contactPhoneName',    c.shared?.ownerName);
+        t('contactLocation',     c.shared?.location);
+        t('contactResponseTime', c.shared?.responseTime);
+        const cea = document.getElementById('contactEmailLink');
+        if (cea && c.shared?.email) { cea.textContent = c.shared.email; cea.href = 'mailto:' + c.shared.email; }
+        const cpa = document.getElementById('contactPhoneLink');
+        if (cpa && c.shared?.phone) { cpa.textContent = c.shared.phone; if (c.shared.phoneHref) cpa.href = 'tel:' + c.shared.phoneHref; }
+        // Footer
+        t('footerBrandDesc', c.shared?.footerBrandDesc);
+        t('footerOwnerName', c.shared?.ownerName);
+        t('footerLocation',  c.shared?.location);
+        t('footerCopyright', c.shared?.copyright);
+        const fea = document.getElementById('footerEmailLink');
+        if (fea && c.shared?.email) { fea.textContent = c.shared.email; fea.href = 'mailto:' + c.shared.email; }
+        const fpa = document.getElementById('footerPhoneLink');
+        if (fpa && c.shared?.phone) { fpa.textContent = c.shared.phone; if (c.shared.phoneHref) fpa.href = 'tel:' + c.shared.phoneHref; }
+      } catch {}
+    })();
+
     // ── Design Carousel (multi-select) ─────────────────────
     let carouselDesigns = [];
     let selectedDesigns = new Set(); // tracks selected design titles

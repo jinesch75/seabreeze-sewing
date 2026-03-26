@@ -60,18 +60,190 @@ function showAdminShell() {
 }
 
 // ── Tabs ──────────────────────────────────────────────────
+const TAB_NAMES = ['designs', 'inquiries', 'about', 'content'];
 function switchTab(tab) {
   activeTab = tab;
   document.querySelectorAll('.admin-tab').forEach((t, i) => {
-    t.classList.toggle('active',
-      (i === 0 && tab === 'designs') ||
-      (i === 1 && tab === 'inquiries') ||
-      (i === 2 && tab === 'about')
-    );
+    t.classList.toggle('active', TAB_NAMES[i] === tab);
   });
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById('tab-' + tab)?.classList.add('active');
-  if (tab === 'about') { loadAboutSettings(); loadHeroPhotoPicker(); }
+  if (tab === 'about')   { loadAboutSettings(); loadHeroPhotoPicker(); }
+  if (tab === 'content') { loadContent(); }
+}
+
+// ── Content Management (Page Text Editor) ─────────────────
+
+async function loadContent() {
+  try {
+    const res = await fetch('/api/content');
+    const c   = await res.json();
+    // Map field IDs to their values in the content object
+    const fields = {
+      // Shared
+      'cnt-shared-ownerName':       c.shared?.ownerName,
+      'cnt-shared-email':           c.shared?.email,
+      'cnt-shared-phone':           c.shared?.phone,
+      'cnt-shared-phoneHref':       c.shared?.phoneHref,
+      'cnt-shared-location':        c.shared?.location,
+      'cnt-shared-responseTime':    c.shared?.responseTime,
+      'cnt-shared-footerBrandDesc': c.shared?.footerBrandDesc,
+      'cnt-shared-copyright':       c.shared?.copyright,
+      // Homepage
+      'cnt-homepage-heroBadge':         c.homepage?.heroBadge,
+      'cnt-homepage-heroHeading':       c.homepage?.heroHeading,
+      'cnt-homepage-heroHeadingEm':     c.homepage?.heroHeadingEm,
+      'cnt-homepage-heroDesc':          c.homepage?.heroDesc,
+      'cnt-homepage-catalogueLabel':    c.homepage?.catalogueLabel,
+      'cnt-homepage-catalogueHeading':  c.homepage?.catalogueHeading,
+      'cnt-homepage-catalogueSubtitle': c.homepage?.catalogueSubtitle,
+      // About
+      'cnt-about-headerLabel':    c.about?.headerLabel,
+      'cnt-about-headerHeading':  c.about?.headerHeading,
+      'cnt-about-headerSubtitle': c.about?.headerSubtitle,
+      'cnt-about-storyLabel':     c.about?.storyLabel,
+      'cnt-about-storyHeading':   c.about?.storyHeading,
+      'cnt-about-storyHeadingBr': c.about?.storyHeadingBr,
+      'cnt-about-storyPara1':     c.about?.storyPara1,
+      'cnt-about-storyPara2':     c.about?.storyPara2,
+      'cnt-about-storyPara3':     c.about?.storyPara3,
+      'cnt-about-valuesLabel':    c.about?.valuesLabel,
+      'cnt-about-valuesHeading':  c.about?.valuesHeading,
+      'cnt-about-value1Icon':     c.about?.value1Icon,
+      'cnt-about-value1Title':    c.about?.value1Title,
+      'cnt-about-value1Desc':     c.about?.value1Desc,
+      'cnt-about-value2Icon':     c.about?.value2Icon,
+      'cnt-about-value2Title':    c.about?.value2Title,
+      'cnt-about-value2Desc':     c.about?.value2Desc,
+      'cnt-about-value3Icon':     c.about?.value3Icon,
+      'cnt-about-value3Title':    c.about?.value3Title,
+      'cnt-about-value3Desc':     c.about?.value3Desc,
+      'cnt-about-materialsLabel':   c.about?.materialsLabel,
+      'cnt-about-materialsHeading': c.about?.materialsHeading,
+      'cnt-about-materialsIntro':   c.about?.materialsIntro,
+      'cnt-about-mat1Title': c.about?.mat1Title,
+      'cnt-about-mat1Desc':  c.about?.mat1Desc,
+      'cnt-about-mat2Title': c.about?.mat2Title,
+      'cnt-about-mat2Desc':  c.about?.mat2Desc,
+      'cnt-about-mat3Title': c.about?.mat3Title,
+      'cnt-about-mat3Desc':  c.about?.mat3Desc,
+      'cnt-about-mat4Title': c.about?.mat4Title,
+      'cnt-about-mat4Desc':  c.about?.mat4Desc,
+      'cnt-about-mat5Title': c.about?.mat5Title,
+      'cnt-about-mat5Desc':  c.about?.mat5Desc,
+      'cnt-about-mat6Title': c.about?.mat6Title,
+      'cnt-about-mat6Desc':  c.about?.mat6Desc,
+      // Contact
+      'cnt-contact-headerLabel':     c.contact?.headerLabel,
+      'cnt-contact-headerHeading':   c.contact?.headerHeading,
+      'cnt-contact-headerSubtitle':  c.contact?.headerSubtitle,
+      'cnt-contact-infoHeading':     c.contact?.infoHeading,
+      'cnt-contact-infoPara':        c.contact?.infoPara,
+      'cnt-contact-howItWorksTitle': c.contact?.howItWorksTitle,
+      'cnt-contact-howItWorksDesc':  c.contact?.howItWorksDesc,
+    };
+    for (const [id, val] of Object.entries(fields)) {
+      const el = document.getElementById(id);
+      if (el && val != null) el.value = val;
+    }
+  } catch (err) {
+    showToast('Could not load page content. Is the server running?', 'error');
+  }
+}
+
+function g(id) { return document.getElementById(id)?.value || ''; }
+
+async function saveContent() {
+  const btn       = document.getElementById('contentSaveBtn');
+  const btnBottom = document.getElementById('contentSaveBtnBottom');
+  const status    = document.getElementById('contentSaveStatus');
+  [btn, btnBottom].forEach(b => { if (b) { b.disabled = true; b.textContent = 'Saving…'; } });
+  status.textContent = '';
+
+  const content = {
+    shared: {
+      ownerName:       g('cnt-shared-ownerName'),
+      email:           g('cnt-shared-email'),
+      phone:           g('cnt-shared-phone'),
+      phoneHref:       g('cnt-shared-phoneHref'),
+      location:        g('cnt-shared-location'),
+      responseTime:    g('cnt-shared-responseTime'),
+      footerBrandDesc: g('cnt-shared-footerBrandDesc'),
+      copyright:       g('cnt-shared-copyright'),
+    },
+    homepage: {
+      heroBadge:         g('cnt-homepage-heroBadge'),
+      heroHeading:       g('cnt-homepage-heroHeading'),
+      heroHeadingEm:     g('cnt-homepage-heroHeadingEm'),
+      heroDesc:          g('cnt-homepage-heroDesc'),
+      catalogueLabel:    g('cnt-homepage-catalogueLabel'),
+      catalogueHeading:  g('cnt-homepage-catalogueHeading'),
+      catalogueSubtitle: g('cnt-homepage-catalogueSubtitle'),
+    },
+    about: {
+      headerLabel:      g('cnt-about-headerLabel'),
+      headerHeading:    g('cnt-about-headerHeading'),
+      headerSubtitle:   g('cnt-about-headerSubtitle'),
+      storyLabel:       g('cnt-about-storyLabel'),
+      storyHeading:     g('cnt-about-storyHeading'),
+      storyHeadingBr:   g('cnt-about-storyHeadingBr'),
+      storyPara1:       g('cnt-about-storyPara1'),
+      storyPara2:       g('cnt-about-storyPara2'),
+      storyPara3:       g('cnt-about-storyPara3'),
+      valuesLabel:      g('cnt-about-valuesLabel'),
+      valuesHeading:    g('cnt-about-valuesHeading'),
+      value1Icon:       g('cnt-about-value1Icon'),
+      value1Title:      g('cnt-about-value1Title'),
+      value1Desc:       g('cnt-about-value1Desc'),
+      value2Icon:       g('cnt-about-value2Icon'),
+      value2Title:      g('cnt-about-value2Title'),
+      value2Desc:       g('cnt-about-value2Desc'),
+      value3Icon:       g('cnt-about-value3Icon'),
+      value3Title:      g('cnt-about-value3Title'),
+      value3Desc:       g('cnt-about-value3Desc'),
+      materialsLabel:   g('cnt-about-materialsLabel'),
+      materialsHeading: g('cnt-about-materialsHeading'),
+      materialsIntro:   g('cnt-about-materialsIntro'),
+      mat1Title: g('cnt-about-mat1Title'), mat1Desc: g('cnt-about-mat1Desc'),
+      mat2Title: g('cnt-about-mat2Title'), mat2Desc: g('cnt-about-mat2Desc'),
+      mat3Title: g('cnt-about-mat3Title'), mat3Desc: g('cnt-about-mat3Desc'),
+      mat4Title: g('cnt-about-mat4Title'), mat4Desc: g('cnt-about-mat4Desc'),
+      mat5Title: g('cnt-about-mat5Title'), mat5Desc: g('cnt-about-mat5Desc'),
+      mat6Title: g('cnt-about-mat6Title'), mat6Desc: g('cnt-about-mat6Desc'),
+    },
+    contact: {
+      headerLabel:     g('cnt-contact-headerLabel'),
+      headerHeading:   g('cnt-contact-headerHeading'),
+      headerSubtitle:  g('cnt-contact-headerSubtitle'),
+      infoHeading:     g('cnt-contact-infoHeading'),
+      infoPara:        g('cnt-contact-infoPara'),
+      howItWorksTitle: g('cnt-contact-howItWorksTitle'),
+      howItWorksDesc:  g('cnt-contact-howItWorksDesc'),
+    }
+  };
+
+  try {
+    const res  = await fetch('/admin/content', {
+      method:  'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(content)
+    });
+    const json = await res.json();
+    if (json.success) {
+      status.textContent = '✓ Saved! Changes are live on the website.';
+      status.style.color = 'var(--turquoise-dark)';
+      showToast('Page text saved successfully!', 'success');
+    } else {
+      status.textContent = 'Error: ' + (json.error || 'Unknown error');
+      status.style.color = '#dc2626';
+    }
+  } catch {
+    status.textContent = 'Connection error — please try again.';
+    status.style.color = '#dc2626';
+  } finally {
+    [btn, btnBottom].forEach(b => { if (b) { b.disabled = false; b.textContent = 'Save All Changes'; } });
+    setTimeout(() => { status.textContent = ''; }, 6000);
+  }
 }
 
 // ── Price helpers ─────────────────────────────────────────

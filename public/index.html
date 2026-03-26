@@ -33,12 +33,12 @@
       <div class="hero-layout">
         <!-- Centre content -->
         <div class="hero-content">
-          <div class="hero-badge">
+          <div class="hero-badge" id="heroBadge">
             <span class="hero-badge-dot"></span>
-            Handcrafted in Bermuda
+            <span id="heroBadgeText">Handcrafted in Bermuda</span>
           </div>
-          <h1>Where the Ocean<br><em>Inspires Every Stitch</em></h1>
-          <p class="hero-desc">
+          <h1><span id="heroHeading">Where the Ocean</span><br><em id="heroHeadingEm">Inspires Every Stitch</em></h1>
+          <p class="hero-desc" id="heroDesc">
             Each piece from Sea Breeze Sewing BDA is crafted with care in our Bermudian workshop —
             blending the island's natural beauty with timeless, wearable elegance.
           </p>
@@ -64,9 +64,9 @@
   <section class="section">
     <div class="container">
       <div class="text-center">
-        <span class="section-label">Handcrafted in Bermuda</span>
-        <h2 class="section-title">Our Designs</h2>
-        <p class="section-subtitle" style="margin: 0 auto;">
+        <span class="section-label" id="catalogueLabel">Handcrafted in Bermuda</span>
+        <h2 class="section-title" id="catalogueHeading">Our Designs</h2>
+        <p class="section-subtitle" id="catalogueSubtitle" style="margin: 0 auto;">
           Browse our complete collection — each piece lovingly made in our Bermudian workshop.
         </p>
       </div>
@@ -86,7 +86,7 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <img src="/images/logo.svg" alt="Sea Breeze Sewing BDA" class="nav-logo-img" style="margin-bottom:12px;">
-          <p>Handcrafted clothing lovingly made in our Bermudian workshop. Each piece celebrates the island's beauty, warmth, and spirit.</p>
+          <p id="footerBrandDesc">Handcrafted clothing lovingly made in our Bermudian workshop. Each piece celebrates the island's beauty, warmth, and spirit.</p>
         </div>
         <div class="footer-col">
           <h4>Navigation</h4>
@@ -100,15 +100,15 @@
           <h4>Contact</h4>
           <ul>
             <li><a href="/contact.html">Send a Message</a></li>
-            <li>Martine Brosius-Rothwell</li>
-            <li><a href="mailto:martinebrosius@hotmail.com">martinebrosius@hotmail.com</a></li>
-            <li><a href="tel:+14412974463">001 (441) 297-4463</a></li>
-            <li>Bermuda</li>
+            <li id="footerOwnerName">Martine Brosius-Rothwell</li>
+            <li><a href="mailto:martinebrosius@hotmail.com" id="footerEmailLink">martinebrosius@hotmail.com</a></li>
+            <li><a href="tel:+14412974463" id="footerPhoneLink">001 (441) 297-4463</a></li>
+            <li id="footerLocation">Bermuda</li>
           </ul>
         </div>
       </div>
       <div class="footer-bottom">
-        <span>© 2026 Sea Breeze Sewing BDA. All rights reserved.</span>
+        <span id="footerCopyright">© 2026 Sea Breeze Sewing BDA. All rights reserved.</span>
         <a href="/admin.html" style="font-size:0.82rem; color:var(--turquoise-light); opacity:0.7;">⚙ Admin Panel</a>
       </div>
     </div>
@@ -259,6 +259,28 @@
   <script src="/js/main.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
+
+      // ── Load CMS page text ───────────────────────────
+      try {
+        const cRes = await fetch('/api/content');
+        const c    = await cRes.json();
+        const t = (id, v) => { const e = document.getElementById(id); if (e && v != null) e.textContent = v; };
+        t('heroBadgeText',     c.homepage?.heroBadge);
+        t('heroHeading',       c.homepage?.heroHeading);
+        t('heroHeadingEm',     c.homepage?.heroHeadingEm);
+        t('heroDesc',          c.homepage?.heroDesc);
+        t('catalogueLabel',    c.homepage?.catalogueLabel);
+        t('catalogueHeading',  c.homepage?.catalogueHeading);
+        t('catalogueSubtitle', c.homepage?.catalogueSubtitle);
+        t('footerBrandDesc',   c.shared?.footerBrandDesc);
+        t('footerOwnerName',   c.shared?.ownerName);
+        t('footerLocation',    c.shared?.location);
+        t('footerCopyright',   c.shared?.copyright);
+        const ea = document.getElementById('footerEmailLink');
+        if (ea && c.shared?.email) { ea.textContent = c.shared.email; ea.href = 'mailto:' + c.shared.email; }
+        const pa = document.getElementById('footerPhoneLink');
+        if (pa && c.shared?.phone) { pa.textContent = c.shared.phone; if (c.shared.phoneHref) pa.href = 'tel:' + c.shared.phoneHref; }
+      } catch {}
 
       // ── Load hero fan photos (3 overlapping) ─────────
       try {

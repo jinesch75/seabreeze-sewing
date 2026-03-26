@@ -21,6 +21,7 @@ const DATA_DIR      = path.join(__dirname, 'data');
 const DESIGNS_FILE  = path.join(DATA_DIR, 'designs.json');
 const CONTACTS_FILE = path.join(DATA_DIR, 'contacts.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+const CONTENT_FILE  = path.join(DATA_DIR, 'content.json');
 const UPLOADS_DIR   = path.join(__dirname, 'public', 'images', 'uploads');
 
 // Ensure directories exist
@@ -35,6 +36,90 @@ function readJSON(file) {
 }
 function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+// Deep-merge two objects (src overrides dst only where src has non-null values)
+function deepMerge(dst, src) {
+  const out = Object.assign({}, dst);
+  for (const key of Object.keys(src || {})) {
+    if (src[key] !== null && src[key] !== undefined && typeof src[key] === 'object' && !Array.isArray(src[key])) {
+      out[key] = deepMerge(dst[key] || {}, src[key]);
+    } else if (src[key] !== null && src[key] !== undefined) {
+      out[key] = src[key];
+    }
+  }
+  return out;
+}
+
+// Default website text content — used as fallback if content.json doesn't exist yet
+function getDefaultContent() {
+  return {
+    shared: {
+      ownerName:       'Martine Brosius-Rothwell',
+      email:           'martinebrosius@hotmail.com',
+      phone:           '001 (441) 297-4463',
+      phoneHref:       '+14412974463',
+      location:        'Bermuda',
+      responseTime:    'Usually within 1–2 business days',
+      footerBrandDesc: 'Handcrafted clothing lovingly made in our Bermudian workshop. Each piece celebrates the island\'s beauty, warmth, and spirit.',
+      copyright:       '© 2026 Sea Breeze Sewing BDA. All rights reserved.'
+    },
+    homepage: {
+      heroBadge:          'Handcrafted in Bermuda',
+      heroHeading:        'Where the Ocean',
+      heroHeadingEm:      'Inspires Every Stitch',
+      heroDesc:           'Each piece from Sea Breeze Sewing BDA is crafted with care in our Bermudian workshop — blending the island\'s natural beauty with timeless, wearable elegance.',
+      catalogueLabel:     'Handcrafted in Bermuda',
+      catalogueHeading:   'Our Designs',
+      catalogueSubtitle:  'Browse our complete collection — each piece lovingly made in our Bermudian workshop.'
+    },
+    about: {
+      headerLabel:      'The Story',
+      headerHeading:    'About Sea Breeze Sewing',
+      headerSubtitle:   'A small workshop, a love for craft, and an island that inspires every stitch.',
+      storyLabel:       'Who I Am',
+      storyHeading:     'A Bermudian Maker',
+      storyHeadingBr:   'at Heart',
+      storyPara1:       'Welcome to Sea Breeze Sewing BDA. I\'m a passionate seamstress and designer based on the beautiful island of Bermuda, where I\'ve spent years honing my craft in my small studio workshop.',
+      storyPara2:       'My designs are deeply inspired by the island around me — the turquoise waters, the pastel-painted houses, the warmth of the people, and the gentle trade winds that give this studio its name.',
+      storyPara3:       'I believe in slow fashion — taking the time to create pieces that are made to last, that fit beautifully, and that tell a story. Every garment that leaves my workshop has been touched by care and intention.',
+      valuesLabel:      'What Drives Me',
+      valuesHeading:    'My Values',
+      value1Icon:       '🧵',
+      value1Title:      'Handcrafted Quality',
+      value1Desc:       'Every stitch is placed with intention. I take pride in the details that make each piece truly special.',
+      value2Icon:       '🌿',
+      value2Title:      'Thoughtful Materials',
+      value2Desc:       'I carefully select fabrics and materials — prioritising natural fibres, quality weaves, and responsible sourcing.',
+      value3Icon:       '🌊',
+      value3Title:      'Island Spirit',
+      value3Desc:       'Bermuda runs through every design — its colours, its ease, its warmth. The island is my greatest muse.',
+      materialsLabel:   'The Craft',
+      materialsHeading: 'Materials I Work With',
+      materialsIntro:   'I select every material with care, choosing fabrics that are beautiful to wear and honest in their making.',
+      mat1Title: 'Linen',
+      mat1Desc:  'Light, breathable, and perfectly suited to Bermuda\'s warm climate. I source quality linen in a range of natural tones and island-inspired colours.',
+      mat2Title: 'Cotton & Cotton Voile',
+      mat2Desc:  'Soft, versatile, and wonderfully comfortable. Cotton voile is used for flowing blouses and layered pieces that move with the breeze.',
+      mat3Title: 'Tropical Print Fabrics',
+      mat3Desc:  'Curated prints that celebrate Bermuda\'s flora — hibiscus, sea glass, and abstract wave patterns that bring personality to each design.',
+      mat4Title: 'Quality Trims & Threads',
+      mat4Desc:  'Buttons, zippers, elastics, and threads — all selected for durability and finish quality so that each garment holds its shape and beauty for years.',
+      mat5Title: 'Silk & Silk Blends',
+      mat5Desc:  'For special occasion pieces, I work with silk and silk-blend fabrics that drape beautifully and bring a touch of understated elegance.',
+      mat6Title: 'Structured Suiting Fabrics',
+      mat6Desc:  'For tailored Bermuda shorts sets and structured pieces, I use medium-weight suiting fabrics in a palette of classic island colours.'
+    },
+    contact: {
+      headerLabel:      'Say Hello',
+      headerHeading:    'Get in Touch',
+      headerSubtitle:   'Interested in a design, or want to ask about a custom piece? I\'d love to hear from you.',
+      infoHeading:      'Let\'s Talk',
+      infoPara:         'No complicated checkout process — just a simple message. Once I receive your inquiry, I\'ll get back to you personally to discuss the details and arrange the transaction.',
+      howItWorksTitle:  'How it works',
+      howItWorksDesc:   'Send me a message describing the item you\'re interested in. I\'ll reply to confirm availability and discuss sizing, personalisation options, and payment — all handled personally, at our own pace.'
+    }
+  };
 }
 
 // ── Image storage: Cloudinary (production) or local disk (development) ──
@@ -158,6 +243,14 @@ app.get('/api/designs/featured', (req, res) => {
     .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
     .slice(0, 3);
   res.json(featured);
+});
+
+// GET website text content (public — used by all pages to load editable text)
+app.get('/api/content', (req, res) => {
+  const defaults = getDefaultContent();
+  let saved = readJSON(CONTENT_FILE);
+  if (!saved || Array.isArray(saved) || typeof saved !== 'object') saved = {};
+  res.json(deepMerge(defaults, saved));
 });
 
 // POST a contact / purchase inquiry
@@ -349,6 +442,16 @@ app.delete('/admin/settings/hero-photos', requireAdmin, (req, res) => {
   if (!s || Array.isArray(s)) s = {};
   s.heroPhotos = [];
   writeJSON(SETTINGS_FILE, s);
+  res.json({ success: true });
+});
+
+// PUT update all website text content (admin)
+app.put('/admin/content', requireAdmin, (req, res) => {
+  const content = req.body;
+  if (!content || typeof content !== 'object' || Array.isArray(content)) {
+    return res.status(400).json({ error: 'Invalid content data.' });
+  }
+  writeJSON(CONTENT_FILE, content);
   res.json({ success: true });
 });
 

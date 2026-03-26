@@ -766,6 +766,75 @@
     }
     .hero-preview-slot.empty { color: var(--text-light); font-size: 1.4rem; }
 
+    /* ── Content Editor Tab ───────────────────────────────── */
+    .content-section {
+      background: var(--sand);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 28px;
+    }
+    .content-section-title {
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+    .content-section-desc {
+      font-size: 0.85rem;
+      color: var(--text-mid);
+      margin-bottom: 20px;
+    }
+    .content-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    .content-fields .form-group {
+      margin-bottom: 0;
+    }
+    .content-fields .form-group label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-mid);
+      display: block;
+      margin-bottom: 5px;
+    }
+    .content-fields input,
+    .content-fields textarea,
+    .content-fields select {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.88rem;
+      background: white;
+      color: var(--text);
+      transition: var(--transition);
+      box-sizing: border-box;
+    }
+    .content-fields input:focus,
+    .content-fields textarea:focus {
+      outline: none;
+      border-color: var(--turquoise);
+      box-shadow: 0 0 0 3px rgba(74,171,181,0.15);
+    }
+    .content-fields textarea { resize: vertical; min-height: 72px; }
+    .content-fields .full { grid-column: 1 / -1; }
+    .content-divider {
+      grid-column: 1 / -1;
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 8px 0 4px;
+    }
+    .content-sub-heading {
+      grid-column: 1 / -1;
+      font-size: 0.88rem;
+      font-weight: 800;
+      color: var(--text);
+      padding-top: 4px;
+    }
+
     @media (max-width: 768px) {
       .upload-fields { grid-template-columns: 1fr; }
       .upload-fields .form-group:last-child { grid-column: auto; }
@@ -773,6 +842,10 @@
       .login-card { padding: 36px 24px; }
       .design-edit-row .edit-fields { grid-template-columns: 1fr; }
       .design-edit-row .edit-fields .full { grid-column: 1 / -1; }
+      .content-fields { grid-template-columns: 1fr; }
+      .content-fields .full { grid-column: 1; }
+      .content-sub-heading { grid-column: 1; }
+      .content-divider { grid-column: 1; }
     }
   </style>
 </head>
@@ -827,7 +900,10 @@
           ✉️ Inquiries <span id="inquiriesCount" class="tab-badge" style="display:none;"></span>
         </button>
         <button class="admin-tab" onclick="switchTab('about')">
-          🖼 Change pictures
+          🖼 Change Pictures
+        </button>
+        <button class="admin-tab" onclick="switchTab('content')">
+          ✏️ Page Text
         </button>
       </div>
 
@@ -915,6 +991,299 @@
             <div class="spinner" style="margin:0 auto 16px;"></div>
             Loading inquiries...
           </div>
+        </div>
+      </div>
+
+      <!-- ── Content Editor Tab ───────────────────────────── -->
+      <div class="tab-panel" id="tab-content">
+        <div class="upload-card">
+
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap;gap:12px;">
+            <div>
+              <h3 style="margin-bottom:4px;">✏️ Edit Website Text</h3>
+              <p style="font-size:0.88rem;color:var(--text-mid);max-width:600px;">
+                Change any text on your website here. Edits are saved to the server and will <strong>not</strong> be lost when you update the code on GitHub.
+              </p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="saveContent()" id="contentSaveBtn">Save All Changes</button>
+          </div>
+
+          <!-- ── Shared Info ─────────────────────────────── -->
+          <div class="content-section">
+            <div class="content-section-title">📋 Shared Information</div>
+            <div class="content-section-desc">These details appear across all pages — footer, contact page, etc.</div>
+            <div class="content-fields">
+              <div class="form-group">
+                <label>Your Name</label>
+                <input type="text" id="cnt-shared-ownerName" placeholder="Martine Brosius-Rothwell">
+              </div>
+              <div class="form-group">
+                <label>Location</label>
+                <input type="text" id="cnt-shared-location" placeholder="Bermuda">
+              </div>
+              <div class="form-group">
+                <label>Email Address</label>
+                <input type="email" id="cnt-shared-email" placeholder="martinebrosius@hotmail.com">
+              </div>
+              <div class="form-group">
+                <label>Response Time</label>
+                <input type="text" id="cnt-shared-responseTime" placeholder="Usually within 1–2 business days">
+              </div>
+              <div class="form-group">
+                <label>Phone (display text)</label>
+                <input type="text" id="cnt-shared-phone" placeholder="001 (441) 297-4463">
+              </div>
+              <div class="form-group">
+                <label>Phone (for links — no spaces, e.g. +14412974463)</label>
+                <input type="text" id="cnt-shared-phoneHref" placeholder="+14412974463">
+              </div>
+              <div class="form-group full">
+                <label>Footer Brand Description</label>
+                <textarea id="cnt-shared-footerBrandDesc" rows="2"></textarea>
+              </div>
+              <div class="form-group full">
+                <label>Copyright Line</label>
+                <input type="text" id="cnt-shared-copyright">
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Homepage ────────────────────────────────── -->
+          <div class="content-section">
+            <div class="content-section-title">🏠 Homepage</div>
+            <div class="content-fields">
+              <div class="content-sub-heading">Hero Banner</div>
+              <div class="form-group">
+                <label>Badge Text (small pill above heading)</label>
+                <input type="text" id="cnt-homepage-heroBadge">
+              </div>
+              <div class="form-group">
+                <label>Hero Heading — Line 1</label>
+                <input type="text" id="cnt-homepage-heroHeading">
+              </div>
+              <div class="form-group full">
+                <label>Hero Heading — Line 2 (italic)</label>
+                <input type="text" id="cnt-homepage-heroHeadingEm">
+              </div>
+              <div class="form-group full">
+                <label>Hero Description Paragraph</label>
+                <textarea id="cnt-homepage-heroDesc" rows="2"></textarea>
+              </div>
+              <hr class="content-divider">
+              <div class="content-sub-heading">Designs Catalogue Section</div>
+              <div class="form-group">
+                <label>Section Label (small uppercase text)</label>
+                <input type="text" id="cnt-homepage-catalogueLabel">
+              </div>
+              <div class="form-group">
+                <label>Section Heading</label>
+                <input type="text" id="cnt-homepage-catalogueHeading">
+              </div>
+              <div class="form-group full">
+                <label>Section Subtitle</label>
+                <textarea id="cnt-homepage-catalogueSubtitle" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── About Page ──────────────────────────────── -->
+          <div class="content-section">
+            <div class="content-section-title">📖 About Page</div>
+            <div class="content-fields">
+              <div class="content-sub-heading">Page Header</div>
+              <div class="form-group">
+                <label>Header Label</label>
+                <input type="text" id="cnt-about-headerLabel">
+              </div>
+              <div class="form-group">
+                <label>Header Heading</label>
+                <input type="text" id="cnt-about-headerHeading">
+              </div>
+              <div class="form-group full">
+                <label>Header Subtitle</label>
+                <textarea id="cnt-about-headerSubtitle" rows="2"></textarea>
+              </div>
+              <hr class="content-divider">
+              <div class="content-sub-heading">Your Story</div>
+              <div class="form-group">
+                <label>Story Section Label</label>
+                <input type="text" id="cnt-about-storyLabel">
+              </div>
+              <div class="form-group">
+                <label>Story Heading — Line 1</label>
+                <input type="text" id="cnt-about-storyHeading">
+              </div>
+              <div class="form-group full">
+                <label>Story Heading — Line 2</label>
+                <input type="text" id="cnt-about-storyHeadingBr">
+              </div>
+              <div class="form-group full">
+                <label>Story Paragraph 1</label>
+                <textarea id="cnt-about-storyPara1" rows="3"></textarea>
+              </div>
+              <div class="form-group full">
+                <label>Story Paragraph 2</label>
+                <textarea id="cnt-about-storyPara2" rows="3"></textarea>
+              </div>
+              <div class="form-group full">
+                <label>Story Paragraph 3</label>
+                <textarea id="cnt-about-storyPara3" rows="3"></textarea>
+              </div>
+              <hr class="content-divider">
+              <div class="content-sub-heading">Values Section</div>
+              <div class="form-group">
+                <label>Values Label</label>
+                <input type="text" id="cnt-about-valuesLabel">
+              </div>
+              <div class="form-group">
+                <label>Values Heading</label>
+                <input type="text" id="cnt-about-valuesHeading">
+              </div>
+              <div class="form-group" style="max-width:80px;">
+                <label>Value 1 Icon</label>
+                <input type="text" id="cnt-about-value1Icon" maxlength="4" style="font-size:1.3rem;text-align:center;">
+              </div>
+              <div class="form-group">
+                <label>Value 1 Title</label>
+                <input type="text" id="cnt-about-value1Title">
+              </div>
+              <div class="form-group full">
+                <label>Value 1 Description</label>
+                <textarea id="cnt-about-value1Desc" rows="2"></textarea>
+              </div>
+              <div class="form-group" style="max-width:80px;">
+                <label>Value 2 Icon</label>
+                <input type="text" id="cnt-about-value2Icon" maxlength="4" style="font-size:1.3rem;text-align:center;">
+              </div>
+              <div class="form-group">
+                <label>Value 2 Title</label>
+                <input type="text" id="cnt-about-value2Title">
+              </div>
+              <div class="form-group full">
+                <label>Value 2 Description</label>
+                <textarea id="cnt-about-value2Desc" rows="2"></textarea>
+              </div>
+              <div class="form-group" style="max-width:80px;">
+                <label>Value 3 Icon</label>
+                <input type="text" id="cnt-about-value3Icon" maxlength="4" style="font-size:1.3rem;text-align:center;">
+              </div>
+              <div class="form-group">
+                <label>Value 3 Title</label>
+                <input type="text" id="cnt-about-value3Title">
+              </div>
+              <div class="form-group full">
+                <label>Value 3 Description</label>
+                <textarea id="cnt-about-value3Desc" rows="2"></textarea>
+              </div>
+              <hr class="content-divider">
+              <div class="content-sub-heading">Materials Section</div>
+              <div class="form-group">
+                <label>Materials Label</label>
+                <input type="text" id="cnt-about-materialsLabel">
+              </div>
+              <div class="form-group">
+                <label>Materials Heading</label>
+                <input type="text" id="cnt-about-materialsHeading">
+              </div>
+              <div class="form-group full">
+                <label>Materials Intro Paragraph</label>
+                <textarea id="cnt-about-materialsIntro" rows="2"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Material 1 Name</label>
+                <input type="text" id="cnt-about-mat1Title">
+              </div>
+              <div class="form-group">
+                <label>Material 1 Description</label>
+                <textarea id="cnt-about-mat1Desc" rows="2"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Material 2 Name</label>
+                <input type="text" id="cnt-about-mat2Title">
+              </div>
+              <div class="form-group">
+                <label>Material 2 Description</label>
+                <textarea id="cnt-about-mat2Desc" rows="2"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Material 3 Name</label>
+                <input type="text" id="cnt-about-mat3Title">
+              </div>
+              <div class="form-group">
+                <label>Material 3 Description</label>
+                <textarea id="cnt-about-mat3Desc" rows="2"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Material 4 Name</label>
+                <input type="text" id="cnt-about-mat4Title">
+              </div>
+              <div class="form-group">
+                <label>Material 4 Description</label>
+                <textarea id="cnt-about-mat4Desc" rows="2"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Material 5 Name</label>
+                <input type="text" id="cnt-about-mat5Title">
+              </div>
+              <div class="form-group">
+                <label>Material 5 Description</label>
+                <textarea id="cnt-about-mat5Desc" rows="2"></textarea>
+              </div>
+              <div class="form-group">
+                <label>Material 6 Name</label>
+                <input type="text" id="cnt-about-mat6Title">
+              </div>
+              <div class="form-group">
+                <label>Material 6 Description</label>
+                <textarea id="cnt-about-mat6Desc" rows="2"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- ── Contact Page ────────────────────────────── -->
+          <div class="content-section">
+            <div class="content-section-title">📬 Contact Page</div>
+            <div class="content-fields">
+              <div class="content-sub-heading">Page Header</div>
+              <div class="form-group">
+                <label>Header Label</label>
+                <input type="text" id="cnt-contact-headerLabel">
+              </div>
+              <div class="form-group">
+                <label>Header Heading</label>
+                <input type="text" id="cnt-contact-headerHeading">
+              </div>
+              <div class="form-group full">
+                <label>Header Subtitle</label>
+                <textarea id="cnt-contact-headerSubtitle" rows="2"></textarea>
+              </div>
+              <hr class="content-divider">
+              <div class="content-sub-heading">Info Column</div>
+              <div class="form-group">
+                <label>Info Heading</label>
+                <input type="text" id="cnt-contact-infoHeading">
+              </div>
+              <div class="form-group full">
+                <label>Info Paragraph</label>
+                <textarea id="cnt-contact-infoPara" rows="3"></textarea>
+              </div>
+              <div class="form-group">
+                <label>"How It Works" Title</label>
+                <input type="text" id="cnt-contact-howItWorksTitle">
+              </div>
+              <div class="form-group full">
+                <label>"How It Works" Description</label>
+                <textarea id="cnt-contact-howItWorksDesc" rows="3"></textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- Save button + status -->
+          <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border);">
+            <button class="btn btn-primary" onclick="saveContent()" id="contentSaveBtnBottom">Save All Changes</button>
+            <span id="contentSaveStatus" style="font-size:0.88rem;color:var(--text-mid);"></span>
+          </div>
+
         </div>
       </div>
 
