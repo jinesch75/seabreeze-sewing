@@ -160,18 +160,21 @@ ul { list-style: none; }
   font-family: 'Playfair Display', serif;
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--text);
+  color: var(--white);
   line-height: 1.15;
 }
-.nav-logo-text span { color: var(--turquoise); }
+.nav-logo-text span { color: var(--white); }
 .nav-logo-sub {
   font-size: 0.65rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-mid);
+  color: rgba(255,255,255,0.75);
   font-family: 'Lato', sans-serif;
   font-weight: 400;
 }
+.nav.scrolled .nav-logo-text { color: var(--text); }
+.nav.scrolled .nav-logo-text span { color: var(--turquoise); }
+.nav.scrolled .nav-logo-sub { color: var(--text-mid); }
 .nav-logo-img {
   height: 46px;
   width: auto;
