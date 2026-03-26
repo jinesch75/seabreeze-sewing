@@ -160,21 +160,18 @@ ul { list-style: none; }
   font-family: 'Playfair Display', serif;
   font-size: 1.15rem;
   font-weight: 700;
-  color: var(--white);
+  color: var(--text);
   line-height: 1.15;
 }
-.nav-logo-text span { color: var(--white); }
+.nav-logo-text span { color: var(--turquoise); }
 .nav-logo-sub {
   font-size: 0.65rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.75);
+  color: var(--text-mid);
   font-family: 'Lato', sans-serif;
   font-weight: 400;
 }
-.nav.scrolled .nav-logo-text { color: var(--text); }
-.nav.scrolled .nav-logo-text span { color: var(--turquoise); }
-.nav.scrolled .nav-logo-sub { color: var(--text-mid); }
 .nav-logo-img {
   height: 46px;
   width: auto;
@@ -205,6 +202,17 @@ ul { list-style: none; }
 .nav-links a.active::after { transform: scaleX(1); }
 .nav-links a.active { color: var(--white); }
 .nav.scrolled .nav-links a.active { color: var(--turquoise); }
+
+/* ── Transparent nav state (over hero/header) ─────────────── */
+.nav:not(.scrolled) .nav-logo-img          { filter: brightness(0) invert(1); }
+.nav:not(.scrolled) .nav-links:not(.open) a:not(.btn) { color: rgba(255,255,255,0.92); }
+.nav:not(.scrolled) .nav-hamburger span    { background: white; }
+.nav:not(.scrolled) .nav-cta {
+  background: rgba(255,255,255,0.15);
+  border-color: rgba(255,255,255,0.5);
+  color: white;
+}
+
 .nav-cta {
   padding: 9px 22px;
   font-size: 0.85rem;
