@@ -60,7 +60,7 @@ function showAdminShell() {
 }
 
 // ── Tabs ──────────────────────────────────────────────────
-const TAB_NAMES = ['designs', 'inquiries', 'about', 'content'];
+const TAB_NAMES = ['designs', 'inquiries', 'about', 'content', 'stats'];
 function switchTab(tab) {
   activeTab = tab;
   document.querySelectorAll('.admin-tab').forEach((t, i) => {
@@ -70,6 +70,94 @@ function switchTab(tab) {
   document.getElementById('tab-' + tab)?.classList.add('active');
   if (tab === 'about')   { loadAboutSettings(); loadHeroPhotoPicker(); }
   if (tab === 'content') { loadContent(); }
+  if (tab === 'stats')   { loadStats(); }
+}
+
+// ── Statistics ────────────────────────────────────────────
+let _statsLoaded = false;
+
+async function loadStats() {
+  if (_statsLoaded) return; // already loaded — don't re-fetch on every tab switch
+  _statsLoaded = false;     // will set true after success
+  try {
+    const res  = await fetch('/admin/stats');
+    if (!res.ok) throw new Error('Failed');
+    const data = await res.json();
+
+    // Summary cards
+    document.getElementById('statTotalVisits').textContent = data.totalVisits.toLocaleString();
+    document.getElementById('statTodayVisits').textContent = data.todayVisits.toLocaleString();
+    document.getElementById('statInquiries').textContent   = data.totalInquiries.toLocaleString();
+    document.getElementById('statDesigns').textContent     = data.totalDesigns.toLocaleString();
+
+    // Bar chart — last 30 days
+    renderVisitChart(data.last30);
+
+    // Countries
+    renderCountries(data.countries);
+
+    // Pages
+    renderPages(data.pages);
+
+    _statsLoaded = true;
+  } catch (e) {
+    console.error('Stats load error', e);
+    document.getElementById('statsChart').innerHTML    = '<p style="color:#dc2626;text-align:center;padding:20px;">Could not load statistics.</p>';
+    document.getElementById('statsCountries').innerHTML = '';
+    document.getElementById('statsPages').innerHTML    = '';
+  }
+}
+
+function renderVisitChart(last30) {
+  const max = Math.max(...last30.map(d => d.visits), 1);
+  const bars = last30.map(d => {
+    const heightPct = Math.round((d.visits / max) * 100);
+    const shortDate = d.date.slice(5); // MM-DD
+    return `
+      <div class="chart-bar-wrap">
+        <div class="chart-tooltip">${d.date}: ${d.visits} view${d.visits !== 1 ? 's' : ''}</div>
+        <div class="chart-bar" style="height:${heightPct}%;"></div>
+        <span class="chart-label">${shortDate}</span>
+      </div>`;
+  }).join('');
+  document.getElementById('statsChart').innerHTML = `<div class="chart-bars">${bars}</div>`;
+}
+
+function renderCountries(countries) {
+  if (!countries || !countries.length) {
+    document.getElementById('statsCountries').innerHTML = '<p style="color:var(--text-mid);text-align:center;padding:20px;">No visitor data yet.</p>';
+    return;
+  }
+  const max = countries[0][1] || 1;
+  const rows = countries.map(([name, count]) => {
+    const pct = Math.round((count / max) * 100);
+    return `
+      <div class="country-row">
+        <span class="country-name" title="${name}">${name}</span>
+        <div class="country-bar-wrap">
+          <div class="country-bar" style="width:${pct}%;"></div>
+        </div>
+        <span class="country-count">${count}</span>
+      </div>`;
+  }).join('');
+  document.getElementById('statsCountries').innerHTML = rows;
+}
+
+function renderPages(pages) {
+  if (!pages || !pages.length) {
+    document.getElementById('statsPages').innerHTML = '<p style="color:var(--text-mid);text-align:center;padding:20px;">No page data yet.</p>';
+    return;
+  }
+  const labels = { '/': 'Home', '/about.html': 'About', '/contact.html': 'Contact' };
+  const rows = pages.map(([path, count]) => {
+    const label = labels[path] || path;
+    return `
+      <div class="page-row">
+        <span class="page-row-path">${label} <span style="font-weight:400;color:var(--text-mid);font-size:0.8rem;">${path}</span></span>
+        <span class="page-row-count">${count.toLocaleString()}</span>
+      </div>`;
+  }).join('');
+  document.getElementById('statsPages').innerHTML = rows;
 }
 
 // ── Content Management (Page Text Editor) ─────────────────

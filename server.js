@@ -22,6 +22,7 @@ const DESIGNS_FILE  = path.join(DATA_DIR, 'designs.json');
 const CONTACTS_FILE = path.join(DATA_DIR, 'contacts.json');
 const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
 const CONTENT_FILE  = path.join(DATA_DIR, 'content.json');
+const STATS_FILE    = path.join(DATA_DIR, 'stats.json');
 const UPLOADS_DIR   = path.join(__dirname, 'public', 'images', 'uploads');
 
 // Ensure directories exist
@@ -36,6 +37,42 @@ function readJSON(file) {
 }
 function writeJSON(file, data) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2));
+}
+
+// ── Stats helpers ───────────────────────────────────────
+function readStats() {
+  try { return JSON.parse(fs.readFileSync(STATS_FILE, 'utf8')); }
+  catch { return { visits: [] }; }
+}
+function writeStats(data) {
+  fs.writeFileSync(STATS_FILE, JSON.stringify(data, null, 2));
+}
+
+// In-memory cache so we don't look up the same IP repeatedly
+const _ipCountryCache = {};
+
+function getCountryFromIP(ip) {
+  if (!ip || ip === '::1' || ip === '127.0.0.1' || ip.startsWith('192.168.') || ip.startsWith('10.')) {
+    return Promise.resolve('Local / Development');
+  }
+  if (_ipCountryCache[ip]) return Promise.resolve(_ipCountryCache[ip]);
+  return new Promise((resolve) => {
+    const https = require('https');
+    const req = https.get(`https://ip-api.com/json/${ip}?fields=country`, (res) => {
+      let raw = '';
+      res.on('data', chunk => raw += chunk);
+      res.on('end', () => {
+        try {
+          const json = JSON.parse(raw);
+          const country = json.country || 'Unknown';
+          _ipCountryCache[ip] = country;
+          resolve(country);
+        } catch { resolve('Unknown'); }
+      });
+    });
+    req.on('error', () => resolve('Unknown'));
+    req.setTimeout(4000, () => { req.destroy(); resolve('Unknown'); });
+  });
 }
 
 // Deep-merge two objects (src overrides dst only where src has non-null values)
@@ -196,6 +233,34 @@ app.set('trust proxy', 1);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ── Visit tracking (runs before static files are served) ──
+app.use((req, res, next) => {
+  if (req.method === 'GET') {
+    const p = req.path;
+    // Track HTML page views only, skip admin and API paths
+    const isPage = p === '/' || (p.endsWith('.html') && !p.startsWith('/admin'));
+    if (isPage) {
+      const rawIp = (req.ip || req.connection.remoteAddress || '').replace(/^::ffff:/, '');
+      // Fire-and-forget: don't block the response
+      getCountryFromIP(rawIp).then(country => {
+        const stats = readStats();
+        if (!Array.isArray(stats.visits)) stats.visits = [];
+        stats.visits.push({
+          ip:        rawIp,
+          page:      p,
+          country:   country,
+          timestamp: new Date().toISOString()
+        });
+        // Keep a rolling window of 20 000 visits to avoid unbounded growth
+        if (stats.visits.length > 20000) stats.visits = stats.visits.slice(-20000);
+        writeStats(stats);
+      }).catch(() => {});
+    }
+  }
+  next();
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(session({
   secret: process.env.SESSION_SECRET || 'sbs-secret-key-change-me',
@@ -593,6 +658,55 @@ app.delete('/admin/designs/:id', requireAdmin, async (req, res) => {
   await Promise.all(allImages.map(url => deleteImage(url)));
   writeJSON(DESIGNS_FILE, designs);
   res.json({ success: true });
+});
+
+// GET website statistics (admin)
+app.get('/admin/stats', requireAdmin, (req, res) => {
+  const stats    = readStats();
+  const contacts = readJSON(CONTACTS_FILE);
+  const designs  = readJSON(DESIGNS_FILE);
+  const visits   = Array.isArray(stats.visits) ? stats.visits : [];
+
+  // Aggregate countries
+  const countryCounts = {};
+  // Aggregate pages
+  const pageCounts = {};
+  // Daily buckets
+  const dailyCounts = {};
+
+  visits.forEach(v => {
+    const c = v.country || 'Unknown';
+    countryCounts[c] = (countryCounts[c] || 0) + 1;
+
+    const pg = v.page || '/';
+    pageCounts[pg] = (pageCounts[pg] || 0) + 1;
+
+    const day = (v.timestamp || '').slice(0, 10);
+    if (day) dailyCounts[day] = (dailyCounts[day] || 0) + 1;
+  });
+
+  // Last 30 days series
+  const last30 = [];
+  for (let i = 29; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    last30.push({ date: key, visits: dailyCounts[key] || 0 });
+  }
+
+  // Today's count
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const todayVisits = dailyCounts[todayKey] || 0;
+
+  res.json({
+    totalVisits:    visits.length,
+    todayVisits,
+    totalInquiries: contacts.length,
+    totalDesigns:   designs.length,
+    countries:      Object.entries(countryCounts).sort((a, b) => b[1] - a[1]).slice(0, 20),
+    pages:          Object.entries(pageCounts).sort((a, b) => b[1] - a[1]),
+    last30
+  });
 });
 
 // GET all contact inquiries
