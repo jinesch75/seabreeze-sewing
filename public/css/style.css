@@ -408,7 +408,38 @@ ul { list-style: none; }
   text-transform: uppercase;
   padding: 5px 12px;
   border-radius: 50px;
+  z-index: 3;
 }
+.design-card-badge-sold {
+  top: 14px;
+  right: 14px;
+  left: auto;
+  background: #B22A2A;
+  color: var(--white);
+  box-shadow: 0 4px 12px rgba(178,42,42,0.35);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  padding: 6px 14px;
+}
+/* Sold-state visual treatment on cards */
+.design-card.is-sold .design-card-img img,
+.design-card.is-sold .gallery-slide {
+  filter: grayscale(35%);
+  opacity: 0.85;
+}
+.btn.btn-sold {
+  align-self: flex-start;
+  padding: 10px 24px;
+  font-size: 0.88rem;
+  background: #E8E2D8;
+  color: #8a8580;
+  cursor: not-allowed;
+  border: 1px solid #d6cfc2;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+.btn.btn-sold:hover { transform: none; }
 .design-card-body {
   padding: 22px 24px 24px;
   flex: 1;

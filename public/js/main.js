@@ -63,8 +63,12 @@ function renderCard(design) {
   _designImages[design.id] = images;
 
   // Build image gallery section
+  const badgesHtml = `
+    ${design.isNew  ? '<div class="design-card-badge">NEW</div>' : ''}
+    ${design.isSold ? '<div class="design-card-badge design-card-badge-sold">SOLD</div>' : ''}
+  `;
   const galleryHtml = hasMany
-    ? `<div class="card-gallery" id="${cardId}">
+    ? `<div class="card-gallery${design.isSold ? ' is-sold' : ''}" id="${cardId}">
         ${images.map((src, i) => `
           <img src="${src}" alt="${escHtml(design.title)} — photo ${i + 1}" loading="lazy"
             class="gallery-slide${i === 0 ? ' active' : ''}"
@@ -75,25 +79,27 @@ function renderCard(design) {
         <div class="gallery-dots">
           ${images.map((_, i) => `<span class="gallery-dot${i === 0 ? ' active' : ''}" onclick="goToSlide('${cardId}',${i})"></span>`).join('')}
         </div>
-        ${design.isNew ? '<div class="design-card-badge">NEW</div>' : ''}
+        ${badgesHtml}
       </div>`
-    : `<div class="design-card-img">
+    : `<div class="design-card-img${design.isSold ? ' is-sold' : ''}">
         <img src="${images[0]}" alt="${escHtml(design.title)}" loading="lazy"
           onclick="openLightbox('${escAttr(design.id)}', 0)"
           onerror="this.style.display='none'">
-        ${design.isNew ? '<div class="design-card-badge">NEW</div>' : ''}
+        ${badgesHtml}
       </div>`;
 
+  const buttonHtml = design.isSold
+    ? `<button class="btn btn-sold" disabled>Sold</button>`
+    : `<button class="btn btn-coral" onclick="openInterestModal('${escAttr(design.title)}')">I'm Interested</button>`;
+
   return `
-    <div class="design-card" data-id="${design.id}">
+    <div class="design-card${design.isSold ? ' is-sold' : ''}" data-id="${design.id}">
       ${galleryHtml}
       <div class="design-card-body">
         <h3>${escHtml(design.title)}</h3>
         ${design.price ? `<div class="design-card-price">${escHtml(design.price)}</div>` : ''}
         <p>${escHtml(design.description || '')}</p>
-        <button class="btn btn-coral" onclick="openInterestModal('${escAttr(design.title)}')">
-          I'm Interested
-        </button>
+        ${buttonHtml}
       </div>
     </div>`;
 }

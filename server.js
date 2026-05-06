@@ -567,7 +567,7 @@ app.get('/admin/designs', requireAdmin, (req, res) => {
 
 // POST new design (with one or more images)
 app.post('/admin/designs', requireAdmin, upload.array('images', 10), async (req, res) => {
-  const { title, description, category, featured, price, isNew } = req.body;
+  const { title, description, category, featured, price, isNew, isSold } = req.body;
   if (!title || !req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'Title and at least one image are required.' });
   }
@@ -586,6 +586,7 @@ app.post('/admin/designs', requireAdmin, upload.array('images', 10), async (req,
       images:      imageUrls,      // all images
       featured:    featured === 'true' || featured === true,
       isNew:       isNew === 'true' || isNew === true,
+      isSold:      isSold === 'true' || isSold === true,
       createdAt:   new Date().toISOString()
     };
     designs.push(newDesign);
@@ -602,13 +603,14 @@ app.patch('/admin/designs/:id', requireAdmin, upload.array('images', 10), async 
   const designs = readJSON(DESIGNS_FILE);
   const idx = designs.findIndex(d => d.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: 'Design not found.' });
-  const { title, description, category, featured, price, isNew } = req.body;
+  const { title, description, category, featured, price, isNew, isSold } = req.body;
   if (title)       designs[idx].title       = title;
   if (description !== undefined) designs[idx].description = description;
   if (category)    designs[idx].category    = category;
   if (price !== undefined) designs[idx].price = price;
   if (featured !== undefined) designs[idx].featured = featured === 'true' || featured === true;
   if (isNew !== undefined) designs[idx].isNew = isNew === 'true' || isNew === true;
+  if (isSold !== undefined) designs[idx].isSold = isSold === 'true' || isSold === true;
   // Append any newly uploaded images
   if (req.files && req.files.length > 0) {
     try {

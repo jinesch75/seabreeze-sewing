@@ -526,6 +526,7 @@ async function loadDesigns() {
           <div class="admin-design-title">${escHtml(d.title)}</div>
           <div class="admin-design-meta">
             ${d.isNew ? '<span class="tag" style="background:rgba(201,149,106,0.18);color:#8a3a00;font-weight:700;">🆕 NEW</span>' : ''}
+            ${d.isSold ? '<span class="tag" style="background:rgba(180,40,40,0.15);color:#a02020;font-weight:700;">🔴 SOLD</span>' : ''}
             ${d.price
               ? `<span class="tag" style="background:rgba(201,149,106,0.15);color:#8a5a2a;">💰 ${escHtml(d.price)}</span>`
               : '<span class="tag" style="opacity:0.5;">No price</span>'}
@@ -561,6 +562,17 @@ async function loadDesigns() {
                   <div>
                     <div class="toggle-label" style="font-size:0.82rem;">🆕 Mark as New</div>
                     <div class="toggle-hint" style="font-size:0.75rem;">Show "NEW" badge on this design</div>
+                  </div>
+                </label>
+              </div>
+              <div class="full">
+                <label class="featured-toggle" for="edit-issold-${d.id}"
+                  style="padding:9px 14px;margin:0;max-width:360px;background:white;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;">
+                  <input type="checkbox" id="edit-issold-${d.id}" ${d.isSold ? 'checked' : ''}>
+                  <div class="toggle-switch"></div>
+                  <div>
+                    <div class="toggle-label" style="font-size:0.82rem;">🔴 Mark as Sold</div>
+                    <div class="toggle-hint" style="font-size:0.75rem;">Show "SOLD" badge — disables the "I'm Interested" button</div>
                   </div>
                 </label>
               </div>
@@ -926,6 +938,7 @@ async function saveEditDesign(id) {
   const descEl  = document.getElementById('edit-desc-' + id);
   const priceEl = document.getElementById('edit-price-' + id);
   const isNewEl = document.getElementById('edit-isnew-' + id);
+  const isSoldEl = document.getElementById('edit-issold-' + id);
   if (!titleEl) return;
   const title       = titleEl.value.trim();
   const description = descEl ? descEl.value.trim() : '';
@@ -933,6 +946,7 @@ async function saveEditDesign(id) {
   const body = { title, description };
   if (priceEl) body.price = formatPriceStr(priceEl.value.trim());
   if (isNewEl) body.isNew = isNewEl.checked;
+  if (isSoldEl) body.isSold = isSoldEl.checked;
   try {
     const res = await fetch(`/admin/designs/${id}`, {
       method:  'PATCH',
