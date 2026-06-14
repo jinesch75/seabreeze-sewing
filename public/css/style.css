@@ -251,7 +251,11 @@ ul { list-style: none; }
   display: flex;
   align-items: center;
   position: relative;
-  background: linear-gradient(145deg, #F6E0A4 0%, #EFCE7E 55%, #E6BF68 100%);
+  background-color: #EFCE7E;
+  background-image: linear-gradient(rgba(255,255,255,0.16), rgba(255,255,255,0.16)), url("../images/sand-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
 }
 .hero-overlay {
   position: absolute;
@@ -610,7 +614,11 @@ ul { list-style: none; }
 /* ── About Page ───────────────────────────────────────────── */
 .about-header {
   padding: 140px 0 64px;
-  background: linear-gradient(135deg, #F6E0A4, #E6BF68);
+  background-color: #EFCE7E;
+  background-image: linear-gradient(rgba(255,255,255,0.16), rgba(255,255,255,0.16)), url("../images/sand-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   text-align: center;
 }
 .about-header h1 { color: var(--text); }
@@ -726,7 +734,11 @@ ul { list-style: none; }
 /* ── Contact Page ─────────────────────────────────────────── */
 .contact-header {
   padding: 140px 0 64px;
-  background: linear-gradient(135deg, #F6E0A4, #E6BF68);
+  background-color: #EFCE7E;
+  background-image: linear-gradient(rgba(255,255,255,0.16), rgba(255,255,255,0.16)), url("../images/sand-bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   text-align: center;
 }
 .contact-header h1 { color: var(--text); }
