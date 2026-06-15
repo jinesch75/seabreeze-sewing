@@ -409,7 +409,7 @@ ul { list-style: none; }
   grid-template-columns: repeat(3, 1fr);
   gap: 28px;
   margin: 48px auto 0;
-  max-width: 90%;
+  max-width: 81%;
 }
 
 /* ── Design Card ──────────────────────────────────────────── */
