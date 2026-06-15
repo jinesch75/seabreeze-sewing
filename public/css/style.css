@@ -34,7 +34,10 @@ html { scroll-behavior: smooth; }
 body {
   font-family: 'Lato', sans-serif;
   font-weight: 400;
-  background: linear-gradient(145deg, #1E6B75 0%, #2E8A94 40%, #4AABB5 70%, #7CC8D0 100%);
+  background-color: #2E8A94;
+  background-image: linear-gradient(rgba(18,70,78,0.34), rgba(18,70,78,0.46)), url("../images/water-bg.jpg");
+  background-size: cover;
+  background-position: center;
   background-attachment: fixed;
   color: var(--text);
   line-height: 1.7;
@@ -125,6 +128,24 @@ ul { list-style: none; }
   font-size: 1.05rem;
   max-width: 560px;
 }
+
+/* ── Text sitting directly on the water background ────────── */
+.on-water .section-label { color: #FFE0CC; }
+.on-water .section-title,
+.on-water .about-text h2,
+.on-water .contact-info > h2 {
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgba(0,32,38,0.6);
+}
+.on-water .section-subtitle,
+.on-water .about-text p,
+.on-water .contact-info > p {
+  color: rgba(255,255,255,0.92);
+  text-shadow: 0 1px 8px rgba(0,32,38,0.55);
+}
+.on-water .contact-detail h4 { color: rgba(255,255,255,0.82); text-shadow: 0 1px 6px rgba(0,32,38,0.5); }
+.on-water .contact-detail p,
+.on-water .contact-detail p a { color: #ffffff; text-shadow: 0 1px 8px rgba(0,32,38,0.55); }
 
 /* ── Navigation ───────────────────────────────────────────── */
 .nav {
