@@ -282,7 +282,7 @@ ul { list-style: none; }
   display: flex;
   align-items: center;
   position: relative;
-  background-color: #EFCE7E;
+  background-color: #E8D8CC;
   background-image: url("../images/sand-bg.jpg");
   background-size: cover;
   background-position: center;
@@ -648,7 +648,7 @@ ul { list-style: none; }
 /* ── About Page ───────────────────────────────────────────── */
 .about-header {
   padding: 140px 0 64px;
-  background-color: #EFCE7E;
+  background-color: #E8D8CC;
   background-image: url("../images/sand-bg.jpg");
   background-size: cover;
   background-position: center;
@@ -768,7 +768,7 @@ ul { list-style: none; }
 /* ── Contact Page ─────────────────────────────────────────── */
 .contact-header {
   padding: 140px 0 64px;
-  background-color: #EFCE7E;
+  background-color: #E8D8CC;
   background-image: url("../images/sand-bg.jpg");
   background-size: cover;
   background-position: center;
@@ -1064,7 +1064,7 @@ footer {
   .about-values { grid-template-columns: 1fr; }
   .materials-section { padding: 36px 24px; }
   .form-row { grid-template-columns: 1fr; }
-  .contact-form-card { padding: 28px 20px; }
+  .contact-form-card { padding: 28px 20px; min-width: 0; max-width: 100%; overflow: hidden; }
   .modal { padding: 32px 20px; }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; gap: 12px; text-align: center; }

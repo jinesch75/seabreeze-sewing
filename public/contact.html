@@ -40,7 +40,7 @@
   <!-- ── Contact Layout ─────────────────────────────────── -->
   <section class="section on-water">
     <div class="container">
-      <div class="contact-layout" style="grid-template-columns: 1fr; max-width: 640px; margin: 0 auto;">
+      <div class="contact-layout" style="grid-template-columns: minmax(0, 1fr); max-width: 640px; margin: 0 auto;">
 
         <!-- Form Column -->
         <div class="contact-form-card">
@@ -114,6 +114,8 @@
       gap: 8px;
       /* Constrain to ~5 cards (5 × 100px + 4 × 10px gap = 540px) */
       max-width: 596px;
+      width: 100%;
+      min-width: 0;
     }
     .design-carousel {
       display: flex;
