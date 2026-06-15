@@ -35,7 +35,7 @@ body {
   font-family: 'Lato', sans-serif;
   font-weight: 400;
   background-color: #2E8A94;
-  background-image: linear-gradient(rgba(18,70,78,0.34), rgba(18,70,78,0.46)), url("../images/water-bg.jpg");
+  background-image: linear-gradient(rgba(10,72,80,0.16), rgba(10,72,80,0.26)), url("../images/water-bg.jpg");
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
