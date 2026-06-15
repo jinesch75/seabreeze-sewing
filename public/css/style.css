@@ -233,6 +233,15 @@ ul { list-style: none; }
   border-color: rgba(44,62,53,0.4);
   color: var(--text);
 }
+/* Frosted plate behind the logo so it reads on the busy sand */
+.nav:not(.scrolled) .nav-logo {
+  background: rgba(255,255,255,0.88);
+  padding: 7px 18px 7px 10px;
+  border-radius: 44px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
 
 .nav-cta {
   padding: 9px 22px;
